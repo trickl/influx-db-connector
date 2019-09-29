@@ -1,0 +1,7 @@
+influx-db:
+  url: <INFLUXDB_URL>
+  username: <INFLUXDB_USERNAME>
+  password: <INFLUXDB_PASSWORD>
+logging:
+  level:
+    com.trickl.influxdb: DEBUG
