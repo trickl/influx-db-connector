@@ -1,4 +1,4 @@
-package com.trickl.smarkets.client;
+package com.trickl.influxdb.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trickl.influxdb.client.CandleStreamClient;

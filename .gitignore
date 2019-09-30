@@ -1,0 +1,11 @@
+/target/
+
+# VS Code
+.sonarlint
+.sts4-cache
+.attach*
+.vscode
+.settings
+.classpath
+.factorypath
+.project

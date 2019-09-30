@@ -1,8 +1,11 @@
 package com.trickl.influxdb.config;
 
 import com.trickl.influxdb.client.CandleClient;
+import com.trickl.influxdb.client.CandleStreamClient;
 import com.trickl.influxdb.client.OrderBookClient;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.influxdb.InfluxDB;
@@ -51,5 +54,13 @@ public class InfluxDbConfiguration {
   @Bean
   OrderBookClient influxDbOrderBookClient() {
     return new OrderBookClient(influxDb(), quoteDepth);
+  }
+
+  @Bean
+  CandleStreamClient influxCandleStreamClient() {
+    return new CandleStreamClient(
+        influxDbCandleClient(),
+        Instant::now,
+        Duration.ofMinutes(1));
   }
 }

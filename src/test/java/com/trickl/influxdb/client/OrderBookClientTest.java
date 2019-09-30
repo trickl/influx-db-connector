@@ -1,4 +1,4 @@
-package com.trickl.smarkets.client;
+package com.trickl.influxdb.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
