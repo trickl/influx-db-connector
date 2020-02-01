@@ -1,13 +1,8 @@
 package com.trickl.influxdb.client;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trickl.influxdb.client.OrderBookClient;
 import com.trickl.influxdb.config.InfluxDbConfiguration;
 import java.io.IOException;
-import java.time.Duration;
-import java.util.Arrays;
 
 import org.influxdb.InfluxDB;
 import org.junit.jupiter.api.AfterEach;
@@ -15,15 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles({"unittest"})
@@ -33,14 +22,12 @@ public class OrderBookClientTest {
   @Mock
   private InfluxDB influxDb;
 
-  private Mono<InfluxDB> influxDbConnection;
+  private InfluxDbClient influxDbClient;
 
   private OrderBookClient orderBookClient;
 
   @BeforeEach
   private void setup() {
-    influxDbConnection = Mono.just(influxDb);
-    orderBookClient = new OrderBookClient(influxDbConnection, 3);
   }
 
   @AfterEach

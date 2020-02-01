@@ -1,9 +1,7 @@
 package com.trickl.influxdb.client;
 
-import com.trickl.flux.publishers.DifferentialPollPublisher;
+import com.trickl.flux.mappers.DifferentialMapper;
 import com.trickl.flux.publishers.FixedRateTimePublisher;
-import com.trickl.model.pricing.exceptions.NoSuchInstrumentException;
-import com.trickl.model.pricing.exceptions.ServiceUnavailableException;
 import com.trickl.model.pricing.primitives.Candle;
 import java.time.Duration;
 import java.time.Instant;
@@ -33,18 +31,22 @@ public class CandleStreamClient {
     FixedRateTimePublisher timePublisher =
         new FixedRateTimePublisher(Duration.ZERO, pollPeriod, timeSupplier, Schedulers.parallel());
 
-    DifferentialPollPublisher<Candle> poller =
-        new DifferentialPollPublisher<>(
-            timePublisher.get(), (start, end) -> pollCandlesBetween(instrumentId, start, end));
-
-    return poller.get();
+    return timePublisher.get().flatMap(new DifferentialMapper<Instant, Candle>(
+        (start, end) -> pollCandlesBetween(instrumentId, start, end), null));    
   }
 
   private Publisher<Candle> pollCandlesBetween(String instrumentId, Instant start, Instant end) {
-    try {
-      return candleClient.findBetween(instrumentId, false, start, true, end, true, null);
-    } catch (NoSuchInstrumentException | ServiceUnavailableException ex) {
-      return Flux.error(ex);
+    QueryBetween.QueryBetweenBuilder queryBuilder = QueryBetween.builder();
+    queryBuilder.instrumentId(instrumentId);
+    queryBuilder.startIncl(false);
+    queryBuilder.endIncl(true);
+    if (start != null) {
+      queryBuilder.start(start);
     }
+    if (end != null) {
+      queryBuilder.end(end);
+    }
+
+    return candleClient.findBetween(queryBuilder.build());  
   }
 }

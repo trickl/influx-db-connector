@@ -37,7 +37,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public abstract class BaseClient<T> {
 
-  private final Mono<InfluxDB> influxDbConnection;
+  protected final InfluxDbClient influxDbClient;
 
   /**
    * Stores prices in the database.
@@ -80,6 +80,12 @@ public abstract class BaseClient<T> {
    */
   @Valid
   public void storeNoBatch(String instrumentId, List<T> measurements) {
+    Flux.<Integer, InfluxDB>usingWhen(influxDbClient.getInfluxDb(), influxDb -> 
+        storeNoBatch(influxDb, instrumentId, measurements), influxDb -> Mono.empty());
+  }
+
+  protected Mono<Integer> storeNoBatch(
+      InfluxDB influxDb, String instrumentId, List<T> measurements) {
     BatchPoints batchPoints =
         BatchPoints.database(getDatabaseName())
             .tag("async", "true")
@@ -99,64 +105,59 @@ public abstract class BaseClient<T> {
       batchPoints.point(point);
     }
 
-    // Write them to InfluxDB
-    influxDbConnection.block().write(batchPoints);
+    influxDb.write(batchPoints);
+
+    return Mono.just(measurements.size());
   }
 
   /**
    * Find prices in the database.
    *
-   * @param instrumentId Instrument Id
-   * @param startIncl if start date is inclusive
-   * @param start Start date
-   * @param endIncl if end date is inclusive
-   * @param end End date
-   * @param ascending true if later prices last
-   * @param limit if non null, maximum number of results
+   * @param queryBetween Query parameters
    * @return A list of bars
-   * @throws NoSuchInstrumentException if the instrument has no data
-   * @throws ServiceUnavailableException if the database is not available
    */
-  public Flux<T> findBetween(
-      String instrumentId,
-      boolean startIncl,
-      Instant start,
-      boolean endIncl,
-      Instant end,
-      boolean ascending,
-      Long limit)
-      throws NoSuchInstrumentException, ServiceUnavailableException {
-    String orderByClause = ascending ? " ORDER BY time ASC" : "ORDER BY time DESC";
-    String limitClause = limit == null ? "" : (" LIMIT " + limit.toString());
+  public Flux<T> findBetween(QueryBetween queryBetween) {
+    return Flux.<T, InfluxDB>usingWhen(influxDbClient.getInfluxDb(), influxDb -> 
+      findBetween(influxDb, queryBetween),
+      influxDb -> Mono.empty());
+  }
+
+  protected Flux<T> findBetween(InfluxDB influxDb, QueryBetween queryBetween) {
+    String orderByClause = queryBetween.isAscending() ? " ORDER BY time ASC" : "ORDER BY time DESC";
+    String limitClause = queryBetween.getLimit() == null 
+        ? "" : (" LIMIT " + queryBetween.getLimit().toString());
     String queryString =
         MessageFormat.format(
             "SELECT * FROM {0} WHERE instrument = ''{1}''"
                 + " AND time {2} ''{3}'' AND time {4} ''{5}''{6}{7}",
             getMeasurementName(),
-            instrumentId,
-            startIncl ? ">=" : '>',
-            Rfc3339.YMDHMS_FORMATTER.format(ZonedDateTime.ofInstant(start, ZoneOffset.UTC)),
-            endIncl ? "<=" : '<',
-            Rfc3339.YMDHMS_FORMATTER.format(ZonedDateTime.ofInstant(end, ZoneOffset.UTC)),
+            queryBetween.getInstrumentId(),
+            queryBetween.isStartIncl() ? ">=" : '>',
+            Rfc3339.YMDHMS_FORMATTER.format(
+              ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
+              queryBetween.isEndIncl() ? "<=" : '<',
+            Rfc3339.YMDHMS_FORMATTER.format(
+              ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)),
             orderByClause,
             limitClause);
+
     Query query = new Query(queryString, getDatabaseName());
 
     try {
-      QueryResult queryResult = influxDbConnection.block().query(query);
+      QueryResult queryResult = influxDb.query(query);
       if (queryResult.hasError()) {
-        throw new NoSuchInstrumentException(queryResult.getError());
+        return Flux.error(new NoSuchInstrumentException(queryResult.getError()));
       }
 
       Result result = queryResult.getResults().stream().findFirst().get();
-      return parseResult(instrumentId, result);
+      return parseResult(queryBetween.getInstrumentId(), result);
     } catch (InfluxDBIOException ex) {
       log.log(Level.WARNING, ex.getMessage());
-      throw new ServiceUnavailableException("Error connecting to InfluxDB.", ex);
+      return Flux.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
     }
   }
-
-  private Flux<T> parseResult(String instrumentId, Result result) {
+  
+  protected Flux<T> parseResult(String instrumentId, Result result) {
     List<Series> allSeries = result.getSeries();
     if (allSeries == null) {
       return Flux.empty();

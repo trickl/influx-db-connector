@@ -7,15 +7,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
-
-import reactor.core.publisher.Mono;
 
 public class CandleClient extends BaseClient<Candle> {
 
-  public CandleClient(Mono<InfluxDB> influxDbConnection) {
-    super(influxDbConnection);
+  public CandleClient(InfluxDbClient influxDbClient) {
+    super(influxDbClient);
   }
 
   @Override

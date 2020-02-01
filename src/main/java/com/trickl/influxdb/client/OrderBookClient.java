@@ -12,16 +12,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.influxdb.InfluxDB;
 import org.influxdb.dto.Point;
 
-import reactor.core.publisher.Mono;
-
 public class OrderBookClient extends BaseClient<OrderBook> {
+  
   private final int quoteDepth;
 
-  public OrderBookClient(Mono<InfluxDB> influxDbConnection, int quoteDepth) {
-    super(influxDbConnection);
+  public OrderBookClient(InfluxDbClient influxDbClient, int quoteDepth) {
+    super(influxDbClient);
     this.quoteDepth = quoteDepth;
   }
 

@@ -2,19 +2,15 @@ package com.trickl.influxdb.config;
 
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
+import com.trickl.influxdb.client.InfluxDbClient;
 import com.trickl.influxdb.client.OrderBookClient;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import reactor.core.publisher.Mono;
 
 @Configuration
 public class InfluxDbConfiguration {
@@ -32,28 +28,19 @@ public class InfluxDbConfiguration {
   private int quoteDepth; 
 
   @Bean
-  Mono<InfluxDB> influxDb() {    
-    AtomicReference<InfluxDB> connection = new AtomicReference<>();
-    return Mono.fromSupplier(() -> connection.updateAndGet((InfluxDB conn) -> {
-      if (conn == null) {
-        return InfluxDBFactory.connect(url, username, password);
-      }
-      return conn;
-    }))
-      .flux()
-      .doOnCancel(() -> connection.get().close())
-      .publish()
-      .single();
-  } 
+  InfluxDbClient influxDbClient() {    
+    return new InfluxDbClient(url, username, password);
+  }
+  
     
   @Bean
   CandleClient influxDbCandleClient() {
-    return new CandleClient(influxDb());
+    return new CandleClient(influxDbClient());
   }
   
   @Bean
   OrderBookClient influxDbOrderBookClient() {
-    return new OrderBookClient(influxDb(), quoteDepth);
+    return new OrderBookClient(influxDbClient(), quoteDepth);
   }
 
   @Bean
