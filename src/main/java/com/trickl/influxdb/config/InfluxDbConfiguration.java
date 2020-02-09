@@ -2,8 +2,15 @@ package com.trickl.influxdb.config;
 
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
+import com.trickl.influxdb.client.ConnectionProvider;
 import com.trickl.influxdb.client.InfluxDbClient;
+import com.trickl.influxdb.client.InstrumentEventClient;
+import com.trickl.influxdb.client.MarketStateChangeClient;
 import com.trickl.influxdb.client.OrderBookClient;
+import com.trickl.influxdb.client.OrderClient;
+import com.trickl.influxdb.client.SportsEventIncidentClient;
+import com.trickl.influxdb.client.SportsEventOutcomeUpdateClient;
+import com.trickl.influxdb.client.SportsEventScoreUpdateClient;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -22,14 +29,16 @@ public class InfluxDbConfiguration {
   private String username; 
   
   @Value("${influx-db.password:root}")
-  private String password; 
+  private String password;
 
-  @Value("${influx-db.quote-depth:3}")
-  private int quoteDepth; 
+  @Bean
+  ConnectionProvider connectionProvider() {
+    return new ConnectionProvider(url, username, password);
+  }
 
   @Bean
   InfluxDbClient influxDbClient() {    
-    return new InfluxDbClient(url, username, password);
+    return new InfluxDbClient(connectionProvider());
   }
   
     
@@ -37,10 +46,44 @@ public class InfluxDbConfiguration {
   CandleClient influxDbCandleClient() {
     return new CandleClient(influxDbClient());
   }
+
+  @Bean
+  OrderClient influxDbOrderClient() {
+    return new OrderClient(influxDbClient());
+  }
   
   @Bean
   OrderBookClient influxDbOrderBookClient() {
-    return new OrderBookClient(influxDbClient(), quoteDepth);
+    return new OrderBookClient(influxDbOrderClient());
+  }
+
+  @Bean
+  MarketStateChangeClient influxDbMarketStateChangeClient() {
+    return new MarketStateChangeClient(influxDbClient());
+  }
+
+  @Bean
+  SportsEventOutcomeUpdateClient influxDbSportsEventOutcomeUpdateClient() {
+    return new SportsEventOutcomeUpdateClient(influxDbClient());
+  }
+
+  @Bean
+  SportsEventScoreUpdateClient influxDbSportsEventScoreUpdateClient() {
+    return new SportsEventScoreUpdateClient(influxDbClient());
+  }
+
+  @Bean
+  SportsEventIncidentClient influxDbSportsEventIncidentClient() {
+    return new SportsEventIncidentClient(influxDbClient());
+  }
+
+  @Bean
+  InstrumentEventClient influxDbInstrumentEventClient() {
+    return new InstrumentEventClient(
+      influxDbMarketStateChangeClient(), 
+      influxDbSportsEventIncidentClient(),
+      influxDbSportsEventOutcomeUpdateClient(),
+      influxDbSportsEventScoreUpdateClient());      
   }
 
   @Bean

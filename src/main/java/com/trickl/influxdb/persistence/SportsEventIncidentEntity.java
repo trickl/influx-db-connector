@@ -1,7 +1,6 @@
 package com.trickl.influxdb.persistence;
 
 import java.time.Instant;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
@@ -12,12 +11,12 @@ import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;
 import org.influxdb.annotation.TimeColumn;
 
-@Measurement(name = "ohlvc_bar")
+@Measurement(name = "sports_event_incident")
 @Builder
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OhlcvBarEntity {
+public class SportsEventIncidentEntity {
   @NotNull
   @TimeColumn
   @Column(name = "time")
@@ -31,26 +30,19 @@ public class OhlcvBarEntity {
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
     
-  @Min(0)
   @NotNull
-  @Column(name = "open")
-  private Double open;
+  @Column(name = "eventId", tag = true)
+  private String eventId;
 
-  @Min(0)
-  @NotNull
-  @Column(name = "high")
-  private Double high;
+  @Column(name = "matchTime")
+  private String matchTime;
 
-  @Min(0)
-  @NotNull
-  @Column(name = "low")
-  private Double low;
+  @Column(name = "incidentType")
+  private String incidentType;
 
-  @Min(0)
-  @NotNull
-  @Column(name = "close")
-  private Double close;
+  @Column(name = "period")
+  private String period;
 
-  @Column(name = "volume")
-  private Long volume;
+  @Column(name = "side")
+  private String side;
 }

@@ -1,106 +1,80 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.OrderBook;
+import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
-import java.math.BigDecimal;
+
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.influxdb.dto.Point;
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-public class OrderBookClient extends BaseClient<OrderBook> {
-  
-  private final int quoteDepth;
+@RequiredArgsConstructor
+public class OrderBookClient {
 
-  public OrderBookClient(InfluxDbClient influxDbClient, int quoteDepth) {
-    super(influxDbClient);
-    this.quoteDepth = quoteDepth;
+  private final OrderClient orderClient;
+
+  /**
+  * Stores prices in the database.
+  *
+  * @param priceSource the instrument identifier
+  * @param orderBooks data to store
+  */
+  public Flux<Integer> store(PriceSource priceSource, List<OrderBook> orderBooks) {
+    
+    Mono<Flux<Integer>> storeBids = 
+        Flux.fromIterable(orderBooks).flatMap(
+          orderBook -> getOrders(Flux.fromIterable(
+            orderBook.getBids()), true, orderBook.getTime()))
+        .collectList()   
+        .map(list -> orderClient.store(priceSource, list));
+
+    Mono<Flux<Integer>> storeAsks = 
+        Flux.fromIterable(orderBooks).flatMap(
+          orderBook -> getOrders(Flux.fromIterable(
+            orderBook.getAsks()), false, orderBook.getTime()))
+        .collectList()
+        .map(list -> orderClient.store(priceSource, list));
+
+    return Flux.merge(storeBids, storeAsks).flatMap(rows -> rows);
   }
 
-  @Override
-  protected String getDatabaseName() {
-    return "price";
+  protected Flux<Order> getOrders(Flux<Quote> quotes, boolean isBid, Instant time) {
+    return quotes.map(quote -> Order.builder()
+        .quote(quote)
+        .isBid(isBid)
+        .time(time)
+        .build());
   }
 
-  @Override
-  protected String getMeasurementName() {
-    return "quote";
+  /**
+   * Find candles.
+   *
+   * @param priceSource the instrument identifier
+   * @param queryBetween Query parameters
+   * @return A list of order books
+   */
+  public Flux<OrderBook> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
+    return orderClient.findBetween(priceSource, queryBetween)
+      .groupBy(Order::getTime)
+      .flatMap(groupFlux -> groupFlux
+          .collectList()
+          .map(orders ->
+            OrderBook.builder()
+            .bids(getQuotes(orders, true))
+            .asks(getQuotes(orders, false))
+            .time(groupFlux.key())
+            .build()));
   }
 
-  @Override
-  protected List<String> getColumnNames() {
-    return Stream.concat(
-            Stream.of("tradeable"),
-            IntStream.range(0, quoteDepth)
-                .mapToObj(depth -> depth)
-                .flatMap(
-                    depth ->
-                        Arrays.asList("Price" + depth, "Volume" + depth).stream()
-                            .flatMap(
-                                suffix ->
-                                    Arrays.asList("bid" + suffix, "ask" + suffix).stream())))
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  protected void addFields(OrderBook price, Point.Builder builder) {
-    IntStream.range(0, quoteDepth)
-        .forEach(
-            depth -> {
-              if (price.getBids().size() > depth) {
-                Quote bid = price.getBids().get(depth);
-                builder.addField("bidPrice" + depth, bid.getPrice());
-                builder.addField("bidVolume" + depth, bid.getVolume());
-              }
-
-              if (price.getAsks().size() > depth) {
-                Quote ask = price.getAsks().get(depth);
-                builder.addField("askPrice" + depth, ask.getPrice());
-                builder.addField("askVolume" + depth, ask.getVolume());
-              }
-            });
-  }
-
-  @Override
-  protected OrderBook decodeFromDatabase(
-      String instrumentId, Instant time, List<Integer> columnIndexes, List<Object> data) {
-
-    OrderBook.OrderBookBuilder builder = OrderBook.builder().time(time);
-
-    IntStream.range(0, quoteDepth)
-        .forEach(
-            depth -> {
-              if (columnIndexes.get(depth) >= 0 && columnIndexes.get(depth + 2) >= 0) {
-                Quote bid = getQuote(columnIndexes, data, depth);                
-                builder.bid(bid);
-              }
-
-              if (columnIndexes.get(depth + 1) >= 0 && columnIndexes.get(depth + 3) >= 0) {
-                Quote ask = getQuote(columnIndexes, data, depth + 1);                
-                builder.ask(ask);
-              }
-            });
-
-    return builder.build();
-  }
-
-  protected Quote getQuote(List<Integer> columnIndexes, List<Object> data, int depth) {
-    BigDecimal price = BigDecimal.valueOf((Double) data.get(columnIndexes.get(depth)));
-    Long bidVolume = (Long) data.get(columnIndexes.get(2 + depth));
-    return Quote.builder()
-        .price(price)
-        .volume(Optional.ofNullable(bidVolume).orElse(0L))
-        .build();
-  }
-
-  @Override
-  public Function<OrderBook, Instant> getTimeAccessor() {
-    return OrderBook::getTime;
+  protected List<Quote> getQuotes(List<Order> orders, boolean isBid) {
+    return orders.stream()
+      .filter(quote -> isBid)
+      .map(Order::getQuote)
+      .collect(Collectors.toList());
   }
 }

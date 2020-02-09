@@ -12,12 +12,12 @@ import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;
 import org.influxdb.annotation.TimeColumn;
 
-@Measurement(name = "ohlvc_bar")
+@Measurement(name = "order")
 @Builder
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OhlcvBarEntity {
+public class OrderEntity {
   @NotNull
   @TimeColumn
   @Column(name = "time")
@@ -30,27 +30,18 @@ public class OhlcvBarEntity {
   @NotNull
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
-    
-  @Min(0)
-  @NotNull
-  @Column(name = "open")
-  private Double open;
 
   @Min(0)
-  @NotNull
-  @Column(name = "high")
-  private Double high;
+  @Column(name = "isBid")
+  protected boolean isBid;
 
+  @NotNull
   @Min(0)
-  @NotNull
-  @Column(name = "low")
-  private Double low;
+  @Column(name = "price")
+  protected Double price;
 
+  /** The amount of liquidity. */
   @Min(0)
-  @NotNull
-  @Column(name = "close")
-  private Double close;
-
   @Column(name = "volume")
-  private Long volume;
+  protected Long volume;
 }

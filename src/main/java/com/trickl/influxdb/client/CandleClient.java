@@ -1,64 +1,47 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.persistence.OhlcvBarEntity;
+import com.trickl.influxdb.transformers.CandleReader;
+import com.trickl.influxdb.transformers.CandleTransformer;
 import com.trickl.model.pricing.primitives.Candle;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.Arrays;
+import com.trickl.model.pricing.primitives.PriceSource;
+
 import java.util.List;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import org.influxdb.dto.Point;
+import lombok.RequiredArgsConstructor;
+import reactor.core.publisher.Flux;
 
-public class CandleClient extends BaseClient<Candle> {
+@RequiredArgsConstructor
+public class CandleClient {
 
-  public CandleClient(InfluxDbClient influxDbClient) {
-    super(influxDbClient);
+  private final InfluxDbClient influxDbClient;
+
+  /**
+  * Stores prices in the database.
+  *
+  * @param priceSource the instrument identifier
+  * @param candles data to store
+  */
+  public Flux<Integer> store(PriceSource priceSource, List<Candle> candles) {
+    CandleTransformer transformer = new CandleTransformer(priceSource);
+    List<OhlcvBarEntity> measurements = candles.stream().map(transformer)
+        .collect(Collectors.toList());
+    return influxDbClient.store(measurements, "prices", OhlcvBarEntity.class,
+        OhlcvBarEntity::getTime);
   }
 
-  @Override
-  protected String getDatabaseName() {
-    return "price";
-  }
-
-  @Override
-  protected String getMeasurementName() {
-    return "ohlvc_bar";
-  }
-
-  @Override
-  protected List<String> getColumnNames() {
-    return Arrays.asList("open", "high", "low", "close");
-  }
-
-  @Override
-  protected void addFields(Candle bar, Point.Builder builder) {
-    builder.addField("open", bar.getOpen());
-    builder.addField("high", bar.getHigh());
-    builder.addField("low", bar.getLow());
-    builder.addField("close", bar.getClose());
-  }
-
-  @Override
-  protected Candle decodeFromDatabase(
-      String instrumentId, Instant time, List<Integer> columnIndexes, List<Object> data) {
-
-    BigDecimal open = BigDecimal.valueOf((Double) data.get(columnIndexes.get(0)));
-    BigDecimal high = BigDecimal.valueOf((Double) data.get(columnIndexes.get(1)));
-    BigDecimal low = BigDecimal.valueOf((Double) data.get(columnIndexes.get(2)));
-    BigDecimal close = BigDecimal.valueOf((Double) data.get(columnIndexes.get(3)));
-
-    return Candle.builder()
-        .time(time)
-        .open(open)
-        .high(high)
-        .low(low)        
-        .close(close)
-        .complete(true)
-        .build();
-  }
-
-  @Override
-  public Function<Candle, Instant> getTimeAccessor() {
-    return Candle::getTime;
+  /**
+   * Find candles.
+   *
+   * @param priceSource the instrument identifier
+   * @param queryBetween Query parameters
+   * @return A list of bars
+   */
+  public Flux<Candle> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
+    CandleReader reader = new CandleReader();
+    return influxDbClient.findBetween(
+        priceSource, queryBetween, "prices", "ohlvc_bar", OhlcvBarEntity.class)
+        .map(reader);
   }
 }
