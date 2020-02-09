@@ -27,7 +27,8 @@ public class CandleClient {
     CandleTransformer transformer = new CandleTransformer(priceSource);
     List<OhlcvBarEntity> measurements = candles.stream().map(transformer)
         .collect(Collectors.toList());
-    return influxDbClient.store(measurements, "prices", OhlcvBarEntity.class,
+    return influxDbClient.store(measurements, 
+        CommonDatabases.PRICES.getName(), OhlcvBarEntity.class,
         OhlcvBarEntity::getTime);
   }
 
@@ -41,7 +42,17 @@ public class CandleClient {
   public Flux<Candle> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
     CandleReader reader = new CandleReader();
     return influxDbClient.findBetween(
-        priceSource, queryBetween, "prices", "ohlvc_bar", OhlcvBarEntity.class)
+        priceSource, queryBetween, 
+        CommonDatabases.PRICES.getName(), "ohlvc_bar", OhlcvBarEntity.class)
         .map(reader);
+  }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param queryBetween A time window there series must have a data point within
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {
+    return influxDbClient.findSeries(queryBetween, CommonDatabases.PRICES.getName(), "ohlcv_bar");
   }
 }

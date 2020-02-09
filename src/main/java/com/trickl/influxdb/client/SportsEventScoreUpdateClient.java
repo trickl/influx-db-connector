@@ -28,7 +28,8 @@ public class SportsEventScoreUpdateClient {
         = new SportsEventScoreUpdateTransformer(priceSource);
     List<SportsEventScoreUpdateEntity> measurements = events.stream().map(transformer)
         .collect(Collectors.toList());
-    return influxDbClient.store(measurements, "prices", SportsEventScoreUpdateEntity.class,
+    return influxDbClient.store(measurements,
+        CommonDatabases.PRICES.getName(), SportsEventScoreUpdateEntity.class,
         SportsEventScoreUpdateEntity::getTime);
   }
 
@@ -43,8 +44,18 @@ public class SportsEventScoreUpdateClient {
        PriceSource priceSource, QueryBetween queryBetween) {
     SportsEventScoreUpdateReader reader = new SportsEventScoreUpdateReader();
     return influxDbClient.findBetween(
-        priceSource, queryBetween, "prices", "sports_event_score_update",
+        priceSource, queryBetween, CommonDatabases.PRICES.getName(), "sports_event_score_update",
         SportsEventScoreUpdateEntity.class)
         .map(reader);
+  }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param queryBetween A time window there series must have a data point within
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {    
+    return influxDbClient.findSeries(queryBetween,
+        CommonDatabases.PRICES.getName(), "sports_event_score_update");
   }
 }

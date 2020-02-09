@@ -28,7 +28,8 @@ public class MarketStateChangeClient {
         = new MarketStateChangeTransformer(priceSource);
     List<MarketStateChangeEntity> measurements = candles.stream().map(transformer)
         .collect(Collectors.toList());
-    return influxDbClient.store(measurements, "prices", MarketStateChangeEntity.class,
+    return influxDbClient.store(measurements,
+       CommonDatabases.PRICES.getName(), MarketStateChangeEntity.class,
         MarketStateChangeEntity::getTime);
   }
 
@@ -42,7 +43,18 @@ public class MarketStateChangeClient {
   public Flux<MarketStateChange> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
     MarketStateChangeReader reader = new MarketStateChangeReader();
     return influxDbClient.findBetween(
-        priceSource, queryBetween, "prices", "market_state_change", MarketStateChangeEntity.class)
+        priceSource, queryBetween, CommonDatabases.PRICES.getName(),
+        "market_state_change", MarketStateChangeEntity.class)
         .map(reader);
+  }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param queryBetween A time window there series must have a data point within
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {    
+    return influxDbClient.findSeries(queryBetween,
+       CommonDatabases.PRICES.getName(), "market_state_change");
   }
 }

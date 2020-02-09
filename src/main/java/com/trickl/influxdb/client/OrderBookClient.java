@@ -77,4 +77,13 @@ public class OrderBookClient {
       .map(Order::getQuote)
       .collect(Collectors.toList());
   }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param window A time window there series must have a data point within
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(QueryBetween window) {
+    return orderClient.findSeries(window);
+  }
 }

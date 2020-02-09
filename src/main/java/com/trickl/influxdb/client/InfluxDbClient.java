@@ -11,8 +11,11 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -177,5 +180,77 @@ public class InfluxDbClient {
       log.log(Level.WARNING, ex.getMessage());
       return Flux.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
     }
+  }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param queryBetween A time window there series must have a data point within 
+   * @param databaseName the name of the database
+   * @param measurementName the name of the measurement   
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(
+      QueryBetween queryBetween,
+      String databaseName,
+      String measurementName) {
+    return Flux.<PriceSeries, InfluxDB>usingWhen(connectionProvider.getInfluxDb(), influxDb -> 
+        findSeries(influxDb, queryBetween, databaseName, measurementName),
+      influxDb -> Mono.empty());
+  }
+
+  protected Flux<PriceSeries> findSeries(
+      InfluxDB influxDb, 
+      QueryBetween queryBetween,
+      String databaseName,
+      String measurementName) {
+    String queryString =
+        MessageFormat.format(
+            "SHOW SERIES FROM \"{0}\" WHERE time {1} ''{2}''",
+            measurementName,            
+              queryBetween.isEndIncl() ? "<=" : '<',
+            Rfc3339.YMDHMS_FORMATTER.format(
+              ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
+    Query query = new Query(queryString, databaseName);
+    try {
+      QueryResult queryResult = influxDb.query(query);
+      if (queryResult.hasError()) {
+        return Flux.error(new NoSuchInstrumentException(queryResult.getError()));
+      }
+
+      List<PriceSeries> priceSeries = new LinkedList<>();
+      queryResult.getResults().stream()
+          .filter(internalResult -> Objects.nonNull(internalResult)
+               && Objects.nonNull(internalResult.getSeries()))
+          .forEach(internalResult -> 
+            internalResult.getSeries().stream()
+                .forEachOrdered(series -> 
+                  series.getValues().forEach(row ->
+                      row.stream().findFirst()
+                        .ifPresent(key -> parseSeriesKey((String) key, priceSeries)))
+                )
+      );
+
+      return Flux.fromIterable(priceSeries);
+    } catch (InfluxDBIOException ex) {
+      log.log(Level.WARNING, ex.getMessage());
+      return Flux.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
+    }
+  }
+
+  protected void parseSeriesKey(String seriesKey, List<PriceSeries> priceSeries) {
+    Map<String, String> tagMap = Arrays.asList(seriesKey.split(","))
+        .stream()
+        .skip(1)
+        .map(keyValue -> keyValue.split("=", 2))
+        .collect(Collectors.toMap(
+            keyValue -> keyValue.length > 0 ? keyValue[0] : null,
+            keyValue -> keyValue.length > 1 ? keyValue[1] : null));
+
+    priceSeries.add(PriceSeries.builder()
+        .priceSource(PriceSource.builder()
+           .instrumentId(tagMap.get("instrumentId"))
+           .exchangeId(tagMap.get("exchangeId"))
+           .build())
+        .build());
   }
 }

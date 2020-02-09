@@ -27,7 +27,7 @@ public class OrderClient {
     OrderTransformer transformer = new OrderTransformer(priceSource);
     List<OrderEntity> measurements = orders.stream().map(transformer)
         .collect(Collectors.toList());
-    return influxDbClient.store(measurements, "prices", OrderEntity.class,
+    return influxDbClient.store(measurements, CommonDatabases.PRICES.getName(), OrderEntity.class,
         OrderEntity::getTime);
   }
 
@@ -41,7 +41,16 @@ public class OrderClient {
   public Flux<Order> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
     OrderReader reader = new OrderReader();
     return influxDbClient.findBetween(
-        priceSource, queryBetween, "prices", "order", OrderEntity.class)
+        priceSource, queryBetween, CommonDatabases.PRICES.getName(), "order", OrderEntity.class)
         .map(reader);
+  }
+
+  /**
+   * Find all available series that overlap a time window.
+   * @param queryBetween A time window there series must have a data point within
+   * @return A list of series
+   */
+  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {    
+    return influxDbClient.findSeries(queryBetween, CommonDatabases.PRICES.getName(), "order");
   }
 }
