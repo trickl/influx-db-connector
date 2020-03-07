@@ -5,15 +5,14 @@ import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.event.sports.SportsEventIncidentType;
 import com.trickl.model.event.sports.SportsEventPeriod;
 import com.trickl.model.event.sports.SportsEventSide;
-
 import java.util.function.Function;
 
-public class SportsEventIncidentReader implements 
-    Function<SportsEventIncidentEntity, SportsEventIncident> {
+public class SportsEventIncidentReader
+    implements Function<SportsEventIncidentEntity, SportsEventIncident> {
 
   @Override
   public SportsEventIncident apply(SportsEventIncidentEntity instrumentEventEntity) {
-    return SportsEventIncident.builder()    
+    return SportsEventIncident.builder()
         .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .matchTime(instrumentEventEntity.getMatchTime())

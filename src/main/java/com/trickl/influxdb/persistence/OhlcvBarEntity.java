@@ -3,7 +3,6 @@ package com.trickl.influxdb.persistence;
 import java.time.Instant;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +20,7 @@ public class OhlcvBarEntity {
   @NotNull
   @TimeColumn
   @Column(name = "time")
-  private Instant time; 
+  private Instant time;
 
   @NotNull
   @Column(name = "instrumentId", tag = true)
@@ -30,7 +29,7 @@ public class OhlcvBarEntity {
   @NotNull
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
-    
+
   @Min(0)
   @NotNull
   @Column(name = "open")

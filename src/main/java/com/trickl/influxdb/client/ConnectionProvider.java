@@ -1,7 +1,6 @@
 package com.trickl.influxdb.client;
 
 import lombok.RequiredArgsConstructor;
-
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import reactor.core.publisher.Flux;
@@ -10,7 +9,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class ConnectionProvider {
 
-  private final String url; 
+  private final String url;
 
   private final String username;
 
@@ -43,16 +42,14 @@ public class ConnectionProvider {
   private Mono<InfluxDB> getInfluxDbUsingCache(boolean reconnect) {
     if (dbCache == null || reconnect) {
       dbCache =
-        getConnection()              
-        .flux()
-        .cache(1)
-        .filter(db -> db.ping().isGood())
-        .concatWith(Flux.defer(this::getDbReconnect)) 
-        .limitRequest(1)     
-        .last();
+          getConnection()
+              .flux()
+              .cache(1)
+              .filter(db -> db.ping().isGood())
+              .concatWith(Flux.defer(this::getDbReconnect))
+              .limitRequest(1)
+              .last();
     }
     return dbCache;
   }
-
-  
 }

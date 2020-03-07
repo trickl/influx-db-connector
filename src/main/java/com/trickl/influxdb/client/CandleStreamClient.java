@@ -4,7 +4,6 @@ import com.trickl.flux.mappers.DifferentialMapper;
 import com.trickl.flux.publishers.FixedRateTimePublisher;
 import com.trickl.model.pricing.primitives.Candle;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
@@ -33,14 +32,16 @@ public class CandleStreamClient {
     FixedRateTimePublisher timePublisher =
         new FixedRateTimePublisher(Duration.ZERO, pollPeriod, timeSupplier, Schedulers.parallel());
 
-    return timePublisher.get().flatMap(new DifferentialMapper<Instant, Candle>(
-        (start, end) -> pollCandlesBetween(priceSource, start, end), null));    
+    return timePublisher
+        .get()
+        .flatMap(
+            new DifferentialMapper<Instant, Candle>(
+                (start, end) -> pollCandlesBetween(priceSource, start, end), null));
   }
 
   private Publisher<Candle> pollCandlesBetween(
       PriceSource priceSource, Instant start, Instant end) {
-    QueryBetween.QueryBetweenBuilder queryBuilder 
-        = QueryBetween.builder();
+    QueryBetween.QueryBetweenBuilder queryBuilder = QueryBetween.builder();
     queryBuilder.startIncl(false);
     queryBuilder.endIncl(true);
     if (start != null) {
@@ -50,6 +51,6 @@ public class CandleStreamClient {
       queryBuilder.end(end);
     }
 
-    return candleClient.findBetween(priceSource, queryBuilder.build());  
+    return candleClient.findBetween(priceSource, queryBuilder.build());
   }
 }

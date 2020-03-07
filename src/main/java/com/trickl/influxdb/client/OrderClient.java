@@ -5,10 +5,8 @@ import com.trickl.influxdb.transformers.OrderReader;
 import com.trickl.influxdb.transformers.OrderTransformer;
 import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
@@ -18,17 +16,16 @@ public class OrderClient {
   private final InfluxDbClient influxDbClient;
 
   /**
-  * Stores prices in the database.
-  *
-  * @param priceSource the instrument identifier
-  * @param orders data to store
-  */
+   * Stores prices in the database.
+   *
+   * @param priceSource the instrument identifier
+   * @param orders data to store
+   */
   public Flux<Integer> store(PriceSource priceSource, List<Order> orders) {
     OrderTransformer transformer = new OrderTransformer(priceSource);
-    List<OrderEntity> measurements = orders.stream().map(transformer)
-        .collect(Collectors.toList());
-    return influxDbClient.store(measurements, CommonDatabases.PRICES.getName(), OrderEntity.class,
-        OrderEntity::getTime);
+    List<OrderEntity> measurements = orders.stream().map(transformer).collect(Collectors.toList());
+    return influxDbClient.store(
+        measurements, CommonDatabases.PRICES.getName(), OrderEntity.class, OrderEntity::getTime);
   }
 
   /**
@@ -40,17 +37,19 @@ public class OrderClient {
    */
   public Flux<Order> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
     OrderReader reader = new OrderReader();
-    return influxDbClient.findBetween(
-        priceSource, queryBetween, CommonDatabases.PRICES.getName(), "order", OrderEntity.class)
+    return influxDbClient
+        .findBetween(
+            priceSource, queryBetween, CommonDatabases.PRICES.getName(), "order", OrderEntity.class)
         .map(reader);
   }
 
   /**
    * Find all available series that overlap a time window.
+   *
    * @param queryBetween A time window there series must have a data point within
    * @return A list of series
    */
-  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {    
+  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {
     return influxDbClient.findSeries(queryBetween, CommonDatabases.PRICES.getName(), "order");
   }
 }

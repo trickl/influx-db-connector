@@ -3,11 +3,9 @@ package com.trickl.influxdb.transformers;
 import com.trickl.influxdb.persistence.OhlcvBarEntity;
 import com.trickl.model.pricing.primitives.Candle;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.function.Function;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

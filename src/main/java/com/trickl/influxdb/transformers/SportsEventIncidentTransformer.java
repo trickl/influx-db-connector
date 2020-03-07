@@ -3,14 +3,12 @@ package com.trickl.influxdb.transformers;
 import com.trickl.influxdb.persistence.SportsEventIncidentEntity;
 import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.util.function.Function;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class SportsEventIncidentTransformer implements
-    Function<SportsEventIncident, SportsEventIncidentEntity> {
+public class SportsEventIncidentTransformer
+    implements Function<SportsEventIncident, SportsEventIncidentEntity> {
 
   private final PriceSource priceSource;
 
@@ -22,9 +20,12 @@ public class SportsEventIncidentTransformer implements
         .eventId(instrumentEvent.getEventId())
         .time(instrumentEvent.getTime())
         .matchTime(instrumentEvent.getMatchTime())
-        .incidentType(instrumentEvent.getIncidentType().toString())
-        .period(instrumentEvent.getPeriod().toString())
-        .side(instrumentEvent.getSide().toString())
+        .incidentType(
+            instrumentEvent.getIncidentType() != null
+                ? instrumentEvent.getIncidentType().toString()
+                : null)
+        .period(instrumentEvent.getPeriod() != null ? instrumentEvent.getPeriod().toString() : null)
+        .side(instrumentEvent.getSide() != null ? instrumentEvent.getSide().toString() : null)
         .build();
   }
 }

@@ -4,11 +4,9 @@ import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.OrderBook;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,36 +17,34 @@ public class OrderBookClient {
   private final OrderClient orderClient;
 
   /**
-  * Stores prices in the database.
-  *
-  * @param priceSource the instrument identifier
-  * @param orderBooks data to store
-  */
+   * Stores prices in the database.
+   *
+   * @param priceSource the instrument identifier
+   * @param orderBooks data to store
+   */
   public Flux<Integer> store(PriceSource priceSource, List<OrderBook> orderBooks) {
-    
-    Mono<Flux<Integer>> storeBids = 
-        Flux.fromIterable(orderBooks).flatMap(
-          orderBook -> getOrders(Flux.fromIterable(
-            orderBook.getBids()), true, orderBook.getTime()))
-        .collectList()   
-        .map(list -> orderClient.store(priceSource, list));
 
-    Mono<Flux<Integer>> storeAsks = 
-        Flux.fromIterable(orderBooks).flatMap(
-          orderBook -> getOrders(Flux.fromIterable(
-            orderBook.getAsks()), false, orderBook.getTime()))
-        .collectList()
-        .map(list -> orderClient.store(priceSource, list));
+    Mono<Flux<Integer>> storeBids =
+        Flux.fromIterable(orderBooks)
+            .flatMap(
+                orderBook ->
+                    getOrders(Flux.fromIterable(orderBook.getBids()), true, orderBook.getTime()))
+            .collectList()
+            .map(list -> orderClient.store(priceSource, list));
+
+    Mono<Flux<Integer>> storeAsks =
+        Flux.fromIterable(orderBooks)
+            .flatMap(
+                orderBook ->
+                    getOrders(Flux.fromIterable(orderBook.getAsks()), false, orderBook.getTime()))
+            .collectList()
+            .map(list -> orderClient.store(priceSource, list));
 
     return Flux.merge(storeBids, storeAsks).flatMap(rows -> rows);
   }
 
   protected Flux<Order> getOrders(Flux<Quote> quotes, boolean isBid, Instant time) {
-    return quotes.map(quote -> Order.builder()
-        .quote(quote)
-        .isBid(isBid)
-        .time(time)
-        .build());
+    return quotes.map(quote -> Order.builder().quote(quote).isBid(isBid).time(time).build());
   }
 
   /**
@@ -59,27 +55,29 @@ public class OrderBookClient {
    * @return A list of order books
    */
   public Flux<OrderBook> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
-    return orderClient.findBetween(priceSource, queryBetween)
-      .groupBy(Order::getTime)
-      .flatMap(groupFlux -> groupFlux
-          .collectList()
-          .map(orders ->
-            OrderBook.builder()
-            .bids(getQuotes(orders, true))
-            .asks(getQuotes(orders, false))
-            .time(groupFlux.key())
-            .build()));
+    return orderClient
+        .findBetween(priceSource, queryBetween)
+        .groupBy(Order::getTime)
+        .flatMap(
+            groupFlux ->
+                groupFlux
+                    .collectList()
+                    .map(
+                        orders ->
+                            OrderBook.builder()
+                                .bids(getQuotes(orders, true))
+                                .asks(getQuotes(orders, false))
+                                .time(groupFlux.key())
+                                .build()));
   }
 
   protected List<Quote> getQuotes(List<Order> orders, boolean isBid) {
-    return orders.stream()
-      .filter(quote -> isBid)
-      .map(Order::getQuote)
-      .collect(Collectors.toList());
+    return orders.stream().filter(quote -> isBid).map(Order::getQuote).collect(Collectors.toList());
   }
 
   /**
    * Find all available series that overlap a time window.
+   *
    * @param window A time window there series must have a data point within
    * @return A list of series
    */

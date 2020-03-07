@@ -1,9 +1,8 @@
 package com.trickl.influxdb.client;
 
-import com.trickl.influxdb.client.CandleStreamClient;
 import com.trickl.influxdb.config.InfluxDbConfiguration;
 import java.io.IOException;
-
+import lombok.extern.java.Log;
 import org.influxdb.InfluxDB;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,31 +13,24 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import lombok.extern.java.Log;
-
 @RunWith(SpringRunner.class)
-@ActiveProfiles({ "unittest" })
+@ActiveProfiles({"unittest"})
 @SpringBootTest(classes = InfluxDbConfiguration.class)
 @Log
 public class CandleStreamClientTest {
 
-  @Mock
-  private InfluxDB influxDb;
+  @Mock private InfluxDB influxDb;
 
   private InfluxDbClient influxDbClient;
 
   private CandleStreamClient candleStreamClient;
 
   @BeforeEach
-  private void setup() {
-  }
+  private void setup() {}
 
   @AfterEach
-  private void shutdown() throws IOException, InterruptedException {
-  }
+  private void shutdown() throws IOException, InterruptedException {}
 
   @Test
-  public void testGet() throws IOException, InterruptedException {
-
-  }
+  public void testGet() throws IOException, InterruptedException {}
 }

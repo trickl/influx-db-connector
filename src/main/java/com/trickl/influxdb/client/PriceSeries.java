@@ -1,9 +1,7 @@
 package com.trickl.influxdb.client;
 
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.time.Instant;
-
 import lombok.Builder;
 import lombok.Value;
 

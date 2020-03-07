@@ -11,23 +11,21 @@ import com.trickl.influxdb.client.OrderClient;
 import com.trickl.influxdb.client.SportsEventIncidentClient;
 import com.trickl.influxdb.client.SportsEventOutcomeUpdateClient;
 import com.trickl.influxdb.client.SportsEventScoreUpdateClient;
-
 import java.time.Duration;
 import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-
 @Configuration
 public class InfluxDbConfiguration {
-    
+
   @Value("${influx-db.url:}")
-  private String url;  
-    
+  private String url;
+
   @Value("${influx-db.username:root}")
-  private String username; 
-  
+  private String username;
+
   @Value("${influx-db.password:root}")
   private String password;
 
@@ -37,11 +35,10 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
-  InfluxDbClient influxDbClient() {    
+  InfluxDbClient influxDbClient() {
     return new InfluxDbClient(connectionProvider());
   }
-  
-    
+
   @Bean
   CandleClient influxDbCandleClient() {
     return new CandleClient(influxDbClient());
@@ -51,7 +48,7 @@ public class InfluxDbConfiguration {
   OrderClient influxDbOrderClient() {
     return new OrderClient(influxDbClient());
   }
-  
+
   @Bean
   OrderBookClient influxDbOrderBookClient() {
     return new OrderBookClient(influxDbOrderClient());
@@ -80,17 +77,14 @@ public class InfluxDbConfiguration {
   @Bean
   InstrumentEventClient influxDbInstrumentEventClient() {
     return new InstrumentEventClient(
-      influxDbMarketStateChangeClient(), 
-      influxDbSportsEventIncidentClient(),
-      influxDbSportsEventOutcomeUpdateClient(),
-      influxDbSportsEventScoreUpdateClient());      
+        influxDbMarketStateChangeClient(),
+        influxDbSportsEventIncidentClient(),
+        influxDbSportsEventOutcomeUpdateClient(),
+        influxDbSportsEventScoreUpdateClient());
   }
 
   @Bean
   CandleStreamClient influxCandleStreamClient() {
-    return new CandleStreamClient(
-        influxDbCandleClient(),
-        Instant::now,
-        Duration.ofMinutes(1));
+    return new CandleStreamClient(influxDbCandleClient(), Instant::now, Duration.ofMinutes(1));
   }
 }

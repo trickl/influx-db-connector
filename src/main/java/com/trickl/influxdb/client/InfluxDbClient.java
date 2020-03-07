@@ -4,7 +4,6 @@ import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.pricing.exceptions.NoSuchInstrumentException;
 import com.trickl.model.pricing.exceptions.ServiceUnavailableException;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -21,10 +20,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBIOException;
 import org.influxdb.dto.BatchPoints;
@@ -32,7 +29,6 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.influxdb.impl.InfluxDBResultMapper;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -54,8 +50,11 @@ public class InfluxDbClient {
       Class<T> measurementClazz,
       Function<T, Instant> timeAccessor) {
     return storeBatchedByTime(
-        measurements, IsoFields.WEEK_OF_WEEK_BASED_YEAR,
-        databaseName, measurementClazz, timeAccessor);
+        measurements,
+        IsoFields.WEEK_OF_WEEK_BASED_YEAR,
+        databaseName,
+        measurementClazz,
+        timeAccessor);
   }
 
   /**
@@ -66,7 +65,7 @@ public class InfluxDbClient {
    */
   @Valid
   public <T> Flux<Integer> storeBatchedByTime(
-      List<T> measurements, 
+      List<T> measurements,
       TemporalField batchField,
       String databaseName,
       Class<T> measurementClazz,
@@ -81,8 +80,8 @@ public class InfluxDbClient {
                       return zonedTime.get(batchField);
                     }));
     return Flux.merge(
-      Flux.fromIterable(batchedMeasurements.values())
-          .map(measurement -> storeNoBatch(measurement, databaseName, measurementClazz)));
+        Flux.fromIterable(batchedMeasurements.values())
+            .map(measurement -> storeNoBatch(measurement, databaseName, measurementClazz)));
   }
 
   /**
@@ -92,11 +91,10 @@ public class InfluxDbClient {
    */
   @Valid
   public <T> Flux<Integer> storeNoBatch(
-      List<T> measurements, 
-      String databaseName,
-      Class<T> measurementClazz) {
-    return Flux.<Integer, InfluxDB>usingWhen(connectionProvider.getInfluxDb(), influxDb -> 
-        storeNoBatch(influxDb, measurements, databaseName, measurementClazz),
+      List<T> measurements, String databaseName, Class<T> measurementClazz) {
+    return Flux.<Integer, InfluxDB>usingWhen(
+        connectionProvider.getInfluxDb(),
+        influxDb -> storeNoBatch(influxDb, measurements, databaseName, measurementClazz),
         influxDb -> Mono.empty());
   }
 
@@ -111,8 +109,8 @@ public class InfluxDbClient {
             .build();
 
     for (T measurement : measurements) {
-      Point point = Point.measurementByPOJO(measurementClazz)
-          .addFieldsFromPOJO(measurement).build();
+      Point point =
+          Point.measurementByPOJO(measurementClazz).addFieldsFromPOJO(measurement).build();
       batchPoints.point(point);
     }
 
@@ -130,25 +128,32 @@ public class InfluxDbClient {
   public <T> Flux<T> findBetween(
       PriceSource priceSource,
       QueryBetween queryBetween,
-      String databaseName,      
+      String databaseName,
       String measurementName,
       Class<T> measurementClazz) {
-    return Flux.<T, InfluxDB>usingWhen(connectionProvider.getInfluxDb(), influxDb -> 
-      findBetween(influxDb,
-           priceSource, queryBetween, databaseName, measurementName, measurementClazz),
-      influxDb -> Mono.empty());
+    return Flux.<T, InfluxDB>usingWhen(
+        connectionProvider.getInfluxDb(),
+        influxDb ->
+            findBetween(
+                influxDb,
+                priceSource,
+                queryBetween,
+                databaseName,
+                measurementName,
+                measurementClazz),
+        influxDb -> Mono.empty());
   }
 
   protected <T> Flux<T> findBetween(
       InfluxDB influxDb,
       PriceSource priceSource,
       QueryBetween queryBetween,
-      String databaseName,      
+      String databaseName,
       String measurementName,
       Class<T> measurementClazz) {
     String orderByClause = queryBetween.isAscending() ? " ORDER BY time ASC" : "ORDER BY time DESC";
-    String limitClause = queryBetween.getLimit() == null 
-        ? "" : (" LIMIT " + queryBetween.getLimit().toString());
+    String limitClause =
+        queryBetween.getLimit() == null ? "" : (" LIMIT " + queryBetween.getLimit().toString());
     String queryString =
         MessageFormat.format(
             "SELECT * FROM \"{0}\" WHERE exchangeId = ''{1}'' AND instrumentId = ''{2}''"
@@ -158,10 +163,10 @@ public class InfluxDbClient {
             priceSource.getInstrumentId(),
             queryBetween.isStartIncl() ? ">=" : '>',
             Rfc3339.YMDHMS_FORMATTER.format(
-              ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
-              queryBetween.isEndIncl() ? "<=" : '<',
+                ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
+            queryBetween.isEndIncl() ? "<=" : '<',
             Rfc3339.YMDHMS_FORMATTER.format(
-              ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)),
+                ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)),
             orderByClause,
             limitClause);
 
@@ -184,32 +189,29 @@ public class InfluxDbClient {
 
   /**
    * Find all available series that overlap a time window.
-   * @param queryBetween A time window there series must have a data point within 
+   *
+   * @param queryBetween A time window there series must have a data point within
    * @param databaseName the name of the database
-   * @param measurementName the name of the measurement   
+   * @param measurementName the name of the measurement
    * @return A list of series
    */
   public Flux<PriceSeries> findSeries(
-      QueryBetween queryBetween,
-      String databaseName,
-      String measurementName) {
-    return Flux.<PriceSeries, InfluxDB>usingWhen(connectionProvider.getInfluxDb(), influxDb -> 
-        findSeries(influxDb, queryBetween, databaseName, measurementName),
-      influxDb -> Mono.empty());
+      QueryBetween queryBetween, String databaseName, String measurementName) {
+    return Flux.<PriceSeries, InfluxDB>usingWhen(
+        connectionProvider.getInfluxDb(),
+        influxDb -> findSeries(influxDb, queryBetween, databaseName, measurementName),
+        influxDb -> Mono.empty());
   }
 
   protected Flux<PriceSeries> findSeries(
-      InfluxDB influxDb, 
-      QueryBetween queryBetween,
-      String databaseName,
-      String measurementName) {
+      InfluxDB influxDb, QueryBetween queryBetween, String databaseName, String measurementName) {
     String queryString =
         MessageFormat.format(
             "SHOW SERIES FROM \"{0}\" WHERE time {1} ''{2}''",
-            measurementName,            
-              queryBetween.isEndIncl() ? "<=" : '<',
+            measurementName,
+            queryBetween.isEndIncl() ? "<=" : '<',
             Rfc3339.YMDHMS_FORMATTER.format(
-              ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
+                ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
     Query query = new Query(queryString, databaseName);
     try {
       QueryResult queryResult = influxDb.query(query);
@@ -219,16 +221,23 @@ public class InfluxDbClient {
 
       List<PriceSeries> priceSeries = new LinkedList<>();
       queryResult.getResults().stream()
-          .filter(internalResult -> Objects.nonNull(internalResult)
-               && Objects.nonNull(internalResult.getSeries()))
-          .forEach(internalResult -> 
-            internalResult.getSeries().stream()
-                .forEachOrdered(series -> 
-                  series.getValues().forEach(row ->
-                      row.stream().findFirst()
-                        .ifPresent(key -> parseSeriesKey((String) key, priceSeries)))
-                )
-      );
+          .filter(
+              internalResult ->
+                  Objects.nonNull(internalResult) && Objects.nonNull(internalResult.getSeries()))
+          .forEach(
+              internalResult ->
+                  internalResult.getSeries().stream()
+                      .forEachOrdered(
+                          series ->
+                              series
+                                  .getValues()
+                                  .forEach(
+                                      row ->
+                                          row.stream()
+                                              .findFirst()
+                                              .ifPresent(
+                                                  key ->
+                                                      parseSeriesKey((String) key, priceSeries)))));
 
       return Flux.fromIterable(priceSeries);
     } catch (InfluxDBIOException ex) {
@@ -238,19 +247,22 @@ public class InfluxDbClient {
   }
 
   protected void parseSeriesKey(String seriesKey, List<PriceSeries> priceSeries) {
-    Map<String, String> tagMap = Arrays.asList(seriesKey.split(","))
-        .stream()
-        .skip(1)
-        .map(keyValue -> keyValue.split("=", 2))
-        .collect(Collectors.toMap(
-            keyValue -> keyValue.length > 0 ? keyValue[0] : null,
-            keyValue -> keyValue.length > 1 ? keyValue[1] : null));
+    Map<String, String> tagMap =
+        Arrays.asList(seriesKey.split(",")).stream()
+            .skip(1)
+            .map(keyValue -> keyValue.split("=", 2))
+            .collect(
+                Collectors.toMap(
+                    keyValue -> keyValue.length > 0 ? keyValue[0] : null,
+                    keyValue -> keyValue.length > 1 ? keyValue[1] : null));
 
-    priceSeries.add(PriceSeries.builder()
-        .priceSource(PriceSource.builder()
-           .instrumentId(tagMap.get("instrumentId"))
-           .exchangeId(tagMap.get("exchangeId"))
-           .build())
-        .build());
+    priceSeries.add(
+        PriceSeries.builder()
+            .priceSource(
+                PriceSource.builder()
+                    .instrumentId(tagMap.get("instrumentId"))
+                    .exchangeId(tagMap.get("exchangeId"))
+                    .build())
+            .build());
   }
 }

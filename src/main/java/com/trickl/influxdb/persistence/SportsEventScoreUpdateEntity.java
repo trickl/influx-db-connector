@@ -2,7 +2,6 @@ package com.trickl.influxdb.persistence;
 
 import java.time.Instant;
 import javax.validation.constraints.NotNull;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +19,7 @@ public class SportsEventScoreUpdateEntity {
   @NotNull
   @TimeColumn
   @Column(name = "time")
-  private Instant time; 
+  private Instant time;
 
   @NotNull
   @Column(name = "instrumentId", tag = true)
@@ -29,7 +28,7 @@ public class SportsEventScoreUpdateEntity {
   @NotNull
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
-    
+
   @NotNull
   @Column(name = "eventId", tag = true)
   private String eventId;
@@ -37,7 +36,7 @@ public class SportsEventScoreUpdateEntity {
   @Column(name = "current")
   private String current;
 
-  @Column(name = "firstHalf")  
+  @Column(name = "firstHalf")
   private String firstHalf;
 
   @Column(name = "secondHalf")
@@ -48,4 +47,22 @@ public class SportsEventScoreUpdateEntity {
 
   @Column(name = "fullTime")
   private String fullTime;
+
+  @Column(name = "game")
+  private String game;
+
+  @Column(name = "setOne")
+  private String setOne;
+
+  @Column(name = "setTwo")
+  private String setTwo;
+
+  @Column(name = "sets")
+  private String sets;
+
+  @Column(name = "tieBreakOne")
+  private String tieBreakOne;
+
+  @Column(name = "tieBreakTwo")
+  private String tieBreakTwo;
 }

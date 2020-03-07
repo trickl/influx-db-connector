@@ -4,16 +4,14 @@ import com.trickl.influxdb.persistence.SportsEventScoreUpdateEntity;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
 import com.trickl.model.event.sports.SportsEventScores;
 import com.trickl.model.pricing.primitives.PriceSource;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class SportsEventScoreUpdateTransformer implements
-    Function<SportsEventScoreUpdate, SportsEventScoreUpdateEntity> {
+public class SportsEventScoreUpdateTransformer
+    implements Function<SportsEventScoreUpdate, SportsEventScoreUpdateEntity> {
 
   private final PriceSource priceSource;
 
@@ -30,10 +28,18 @@ public class SportsEventScoreUpdateTransformer implements
         .secondHalf(toScoreString(scores.getSecondHalf()))
         .normalTime(toScoreString(scores.getNormalTime()))
         .fullTime(toScoreString(scores.getFullTime()))
+        .game(toScoreString(scores.getGame()))
+        .setOne(toScoreString(scores.getSetOne()))
+        .setTwo(toScoreString(scores.getSetTwo()))
+        .tieBreakOne(toScoreString(scores.getTiebreakOne()))
+        .tieBreakTwo(toScoreString(scores.getTiebreakTwo()))
         .build();
   }
 
   protected String toScoreString(List<Integer> scores) {
+    if (scores == null) {
+      return null;
+    }
     return scores.stream().map(Object::toString).collect(Collectors.joining(","));
   }
 }
