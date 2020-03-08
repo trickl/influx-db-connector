@@ -13,7 +13,8 @@ public class MarketStateChangeReader
     return MarketStateChange.builder()
         .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
-        .state(MarketState.valueOf(instrumentEventEntity.getState()))
+        .state(instrumentEventEntity.getState() != null 
+            ? MarketState.valueOf(instrumentEventEntity.getState()) : null)
         .description(instrumentEventEntity.getDescription())
         .build();
   }

@@ -16,9 +16,12 @@ public class SportsEventIncidentReader
         .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .matchTime(instrumentEventEntity.getMatchTime())
-        .incidentType(SportsEventIncidentType.valueOf(instrumentEventEntity.getIncidentType()))
-        .period(SportsEventPeriod.valueOf(instrumentEventEntity.getPeriod()))
-        .side(SportsEventSide.valueOf(instrumentEventEntity.getSide()))
+        .incidentType(instrumentEventEntity.getIncidentType() != null 
+            ? SportsEventIncidentType.valueOf(instrumentEventEntity.getIncidentType()) : null)
+        .period(instrumentEventEntity.getPeriod() != null
+            ? SportsEventPeriod.valueOf(instrumentEventEntity.getPeriod()) : null)
+        .side(instrumentEventEntity.getSide() != null 
+            ? SportsEventSide.valueOf(instrumentEventEntity.getSide()) : null)
         .build();
   }
 }

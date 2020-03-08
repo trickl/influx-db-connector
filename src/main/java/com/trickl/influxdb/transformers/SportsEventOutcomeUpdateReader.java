@@ -13,7 +13,8 @@ public class SportsEventOutcomeUpdateReader
     return SportsEventOutcomeUpdate.builder()
         .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
-        .outcome(EventOutcomeType.valueOf(instrumentEventEntity.getOutcome()))
+        .outcome(instrumentEventEntity.getOutcome() != null 
+            ? EventOutcomeType.valueOf(instrumentEventEntity.getOutcome()) : null)
         .description(instrumentEventEntity.getDescription())
         .build();
   }
