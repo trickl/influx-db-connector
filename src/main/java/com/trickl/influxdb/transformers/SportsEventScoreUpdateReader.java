@@ -4,6 +4,7 @@ import com.trickl.influxdb.persistence.SportsEventScoreUpdateEntity;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
 import com.trickl.model.event.sports.SportsEventScores;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,6 +34,10 @@ public class SportsEventScoreUpdateReader
   }
 
   protected List<Integer> parseScoreString(String scores) {
+    if (scores == null) {
+      return Collections.emptyList();
+    }
+
     return Arrays.asList(scores.split(",")).stream()
         .map(Integer::parseInt)
         .collect(Collectors.toList());

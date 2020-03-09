@@ -70,12 +70,12 @@ public class InstrumentEventClient {
    * @return A list of bars
    */
   public Flux<InstrumentEvent> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
-    return Flux.mergeOrdered(
-        InstrumentEventClient::compareEventTimes,
+    return Flux.merge(
         marketStateChangeClient.findBetween(priceSource, queryBetween),
         sportsEventIncidentClient.findBetween(priceSource, queryBetween),
         sportsEventOutcomeUpdateClient.findBetween(priceSource, queryBetween),
-        sportsEventScoreUpdateClient.findBetween(priceSource, queryBetween));
+        sportsEventScoreUpdateClient.findBetween(priceSource, queryBetween))
+        .sort(InstrumentEventClient::compareEventTimes);
   }
 
   protected static int compareEventTimes(InstrumentEvent first, InstrumentEvent second) {
