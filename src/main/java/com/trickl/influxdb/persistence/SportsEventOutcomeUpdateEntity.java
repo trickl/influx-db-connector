@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;
 import org.influxdb.annotation.TimeColumn;
@@ -15,6 +16,7 @@ import org.influxdb.annotation.TimeColumn;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class SportsEventOutcomeUpdateEntity {
   @NotNull
   @TimeColumn

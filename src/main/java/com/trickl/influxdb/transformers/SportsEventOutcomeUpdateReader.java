@@ -1,8 +1,8 @@
 package com.trickl.influxdb.transformers;
 
 import com.trickl.influxdb.persistence.SportsEventOutcomeUpdateEntity;
+import com.trickl.model.event.EventOutcomeType;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
-import com.trickl.model.instrument.EventOutcomeType;
 import java.util.function.Function;
 
 public class SportsEventOutcomeUpdateReader

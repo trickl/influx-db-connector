@@ -76,9 +76,22 @@ public class InfluxDbClient {
                 Collectors.groupingBy(
                     measurement -> {
                       Instant time = timeAccessor.apply(measurement);
+                      if (time == null) {
+                        return -1;
+                      }
                       ZonedDateTime zonedTime = ZonedDateTime.ofInstant(time, ZoneOffset.UTC);
                       return zonedTime.get(batchField);
                     }));
+
+    if (batchedMeasurements.containsKey(-1)) {
+      String warningMessage = MessageFormat.format(
+          "At least one record, e.g. {0} contains a invalid timestamp." 
+          + " All such records will be ignored.", 
+          batchedMeasurements.get(-1).get(0));
+      log.warning(warningMessage);
+      batchedMeasurements.remove(-1);
+    }
+
     return Flux.merge(
         Flux.fromIterable(batchedMeasurements.values())
             .map(measurement -> storeNoBatch(measurement, databaseName, measurementClazz)));
