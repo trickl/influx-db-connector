@@ -32,7 +32,7 @@ public class SportsEventScoreUpdateEntity {
   private String exchangeId;
 
   @NotNull
-  @Column(name = "eventId", tag = true)
+  @Column(name = "eventId")
   private String eventId;
 
   @Column(name = "current")
