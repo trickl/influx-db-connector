@@ -24,7 +24,7 @@ public class OrderReader implements Function<OrderEntity, Order> {
                         .build())
                 .build())
         .isBid(orderEntity.getBidOrAsk().equals(BidOrAskFlags.BID))
-        .depth(orderEntity.getDepth())
+        .depth(Integer.parseInt(orderEntity.getDepth()))
         .time(orderEntity.getTime())
         .build();
   }

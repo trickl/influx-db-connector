@@ -36,7 +36,7 @@ public class OrderEntity {
   protected String bidOrAsk;
 
   @Column(name = "depth", tag = true)
-  protected int depth;
+  protected String depth;
 
   @NotNull
   @Min(0)

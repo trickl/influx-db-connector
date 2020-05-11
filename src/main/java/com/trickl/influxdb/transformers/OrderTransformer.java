@@ -24,7 +24,7 @@ public class OrderTransformer implements Function<Order, OrderEntity> {
         .price(Optional.ofNullable(quote.getPrice()).map(BigDecimal::doubleValue).orElse(null))
         .volume(quote.getVolume())
         .bidOrAsk(order.isBid() ? BidOrAskFlags.BID : BidOrAskFlags.ASK)
-        .depth(order.getDepth())
+        .depth(Integer.toString(order.getDepth()))
         .time(order.getTime())
         .build();
   }
