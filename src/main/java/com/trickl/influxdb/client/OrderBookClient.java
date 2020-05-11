@@ -54,21 +54,21 @@ public class OrderBookClient {
   public Flux<OrderBook> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
     return orderClient
         .findBetween(priceSource, queryBetween)
-        .groupBy(Order::getTime)
-        .flatMap(
-            groupFlux ->
-                groupFlux
-                    .collectList()
-                    .map(
-                        orders ->
-                            OrderBook.builder()
-                                .bids(getQuotes(orders, true))
-                                .asks(getQuotes(orders, false))
-                                .time(groupFlux.key())
-                                .build()));
+        .windowUntilChanged(Order::getTime)
+        .flatMap(OrderBookClient::getOrderBook);
   }
 
-  protected List<Order> getOrders(List<Quote> quotes, boolean isBid, Instant time) {
+  protected static Mono<OrderBook> getOrderBook(Flux<Order> orderFlux) {
+    return orderFlux.collectList()
+      .map(orders -> 
+          OrderBook.builder()
+            .bids(getQuotes(orders, true))
+            .asks(getQuotes(orders, false))
+            .time(orders.get(0).getTime())
+            .build());       
+  }
+
+  protected static List<Order> getOrders(List<Quote> quotes, boolean isBid, Instant time) {
     return IntStream.range(0, quotes.size())
       .mapToObj(depth -> Order.builder().quote(
           quotes.get(depth)).isBid(isBid).time(time).depth(depth).build())
@@ -76,7 +76,7 @@ public class OrderBookClient {
   }
 
 
-  protected List<Quote> getQuotes(List<Order> orders, boolean isBid) {
+  protected static List<Quote> getQuotes(List<Order> orders, boolean isBid) {
     return orders.stream().filter(quote -> quote.isBid() == isBid)
         .sorted((a, b) -> a.getDepth() - b.getDepth())
         .map(Order::getQuote).collect(Collectors.toList());
