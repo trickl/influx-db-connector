@@ -77,7 +77,7 @@ public class OrderBookClient {
 
 
   protected List<Quote> getQuotes(List<Order> orders, boolean isBid) {
-    return orders.stream().filter(quote -> isBid)
+    return orders.stream().filter(quote -> quote.isBid() == isBid)
         .sorted((a, b) -> a.getDepth() - b.getDepth())
         .map(Order::getQuote).collect(Collectors.toList());
   }
