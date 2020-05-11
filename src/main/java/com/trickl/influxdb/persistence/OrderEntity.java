@@ -32,9 +32,11 @@ public class OrderEntity {
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
 
-  @Min(0)
-  @Column(name = "isBid")
+  @Column(name = "isBid", tag = true)
   protected boolean isBid;
+
+  @Column(name = "depth", tag = true)
+  protected int depth;
 
   @NotNull
   @Min(0)

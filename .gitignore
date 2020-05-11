@@ -9,3 +9,6 @@
 .classpath
 .factorypath
 .project
+
+# Logging
+logs

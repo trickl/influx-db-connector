@@ -7,6 +7,7 @@ import com.trickl.model.pricing.primitives.Quote;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,24 +28,20 @@ public class OrderBookClient {
     Mono<Flux<Integer>> storeBids =
         Flux.fromIterable(orderBooks)
             .flatMap(
-                orderBook ->
-                    getOrders(Flux.fromIterable(orderBook.getBids()), true, orderBook.getTime()))
+                orderBook -> Flux.fromIterable(
+                    getOrders(orderBook.getBids(), true, orderBook.getTime())))
             .collectList()
             .map(list -> orderClient.store(priceSource, list));
 
     Mono<Flux<Integer>> storeAsks =
         Flux.fromIterable(orderBooks)
             .flatMap(
-                orderBook ->
-                    getOrders(Flux.fromIterable(orderBook.getAsks()), false, orderBook.getTime()))
+                orderBook -> Flux.fromIterable(
+                    getOrders(orderBook.getAsks(), false, orderBook.getTime())))
             .collectList()
             .map(list -> orderClient.store(priceSource, list));
 
     return Flux.merge(storeBids, storeAsks).flatMap(rows -> rows);
-  }
-
-  protected Flux<Order> getOrders(Flux<Quote> quotes, boolean isBid, Instant time) {
-    return quotes.map(quote -> Order.builder().quote(quote).isBid(isBid).time(time).build());
   }
 
   /**
@@ -71,8 +68,17 @@ public class OrderBookClient {
                                 .build()));
   }
 
+  protected List<Order> getOrders(List<Quote> quotes, boolean isBid, Instant time) {
+    return IntStream.range(0, quotes.size())
+      .mapToObj(depth -> Order.builder().quote(quotes.get(depth)).isBid(isBid).time(time).build())
+      .collect(Collectors.toList());
+  }
+
+
   protected List<Quote> getQuotes(List<Order> orders, boolean isBid) {
-    return orders.stream().filter(quote -> isBid).map(Order::getQuote).collect(Collectors.toList());
+    return orders.stream().filter(quote -> isBid)
+        .sorted((a, b) -> a.getDepth() - b.getDepth())
+        .map(Order::getQuote).collect(Collectors.toList());
   }
 
   /**

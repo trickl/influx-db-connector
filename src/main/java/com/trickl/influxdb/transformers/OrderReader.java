@@ -23,6 +23,7 @@ public class OrderReader implements Function<OrderEntity, Order> {
                         .build())
                 .build())
         .isBid(orderEntity.isBid())
+        .depth(orderEntity.getDepth())
         .time(orderEntity.getTime())
         .build();
   }
