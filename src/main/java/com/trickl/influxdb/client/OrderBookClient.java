@@ -70,7 +70,8 @@ public class OrderBookClient {
 
   protected List<Order> getOrders(List<Quote> quotes, boolean isBid, Instant time) {
     return IntStream.range(0, quotes.size())
-      .mapToObj(depth -> Order.builder().quote(quotes.get(depth)).isBid(isBid).time(time).build())
+      .mapToObj(depth -> Order.builder().quote(
+          quotes.get(depth)).isBid(isBid).time(time).depth(depth).build())
       .collect(Collectors.toList());
   }
 
