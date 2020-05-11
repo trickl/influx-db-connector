@@ -169,7 +169,8 @@ public class InfluxDbClient {
       String databaseName,      
       String measurementName,      
       Class<T> measurementClazz) {
-    String orderByClause = queryBetween.isAscending() ? " ORDER BY time ASC" : "ORDER BY time DESC";
+    String orderByClause = queryBetween.isMostRecentFirst() 
+        ? " ORDER BY time DESC" : "ORDER BY time ASC";
     String limitClause =
         queryBetween.getLimit() == null ? "" : (" LIMIT " + queryBetween.getLimit().toString());
     String queryString =
