@@ -189,7 +189,7 @@ public class InfluxDbClient {
             limitClause);
 
     Query query = new Query(queryString, databaseName);
-    int chunkSize = Optional.of(queryBetween.getChunkSize()).orElse(DEFAULT_CHUNK_SIZE);
+    int chunkSize = Optional.ofNullable(queryBetween.getChunkSize()).orElse(DEFAULT_CHUNK_SIZE);
 
     return find(influxDb, query, chunkSize, measurementClazz);
   }    
