@@ -32,8 +32,8 @@ public class OrderEntity {
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
 
-  @Column(name = "isBid", tag = true)
-  protected boolean isBid;
+  @Column(name = "bidOrAsk", tag = true)
+  protected String bidOrAsk;
 
   @Column(name = "depth", tag = true)
   protected int depth;

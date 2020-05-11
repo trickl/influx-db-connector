@@ -1,5 +1,6 @@
 package com.trickl.influxdb.transformers;
 
+import com.trickl.influxdb.persistence.BidOrAskFlags;
 import com.trickl.influxdb.persistence.OrderEntity;
 import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.PriceSource;
@@ -22,7 +23,7 @@ public class OrderTransformer implements Function<Order, OrderEntity> {
         .exchangeId(priceSource.getExchangeId())
         .price(Optional.ofNullable(quote.getPrice()).map(BigDecimal::doubleValue).orElse(null))
         .volume(quote.getVolume())
-        .isBid(order.isBid())
+        .bidOrAsk(order.isBid() ? BidOrAskFlags.BID : BidOrAskFlags.ASK)
         .depth(order.getDepth())
         .time(order.getTime())
         .build();
