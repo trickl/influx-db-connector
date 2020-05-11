@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -29,12 +30,16 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import org.influxdb.impl.InfluxDBResultMapper;
+import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
 @Log
 @RequiredArgsConstructor
 public class InfluxDbClient {
+
+  private static final int DEFAULT_CHUNK_SIZE = 100;
 
   protected final ConnectionProvider connectionProvider;
 
@@ -141,7 +146,7 @@ public class InfluxDbClient {
   public <T> Flux<T> findBetween(
       PriceSource priceSource,
       QueryBetween queryBetween,
-      String databaseName,
+      String databaseName,      
       String measurementName,
       Class<T> measurementClazz) {
     return Flux.<T, InfluxDB>usingWhen(
@@ -161,8 +166,8 @@ public class InfluxDbClient {
       InfluxDB influxDb,
       PriceSource priceSource,
       QueryBetween queryBetween,
-      String databaseName,
-      String measurementName,
+      String databaseName,      
+      String measurementName,      
       Class<T> measurementClazz) {
     String orderByClause = queryBetween.isAscending() ? " ORDER BY time ASC" : "ORDER BY time DESC";
     String limitClause =
@@ -184,20 +189,44 @@ public class InfluxDbClient {
             limitClause);
 
     Query query = new Query(queryString, databaseName);
+    int chunkSize = Optional.of(queryBetween.getChunkSize()).orElse(DEFAULT_CHUNK_SIZE);
 
+    return find(influxDb, query, chunkSize, measurementClazz);
+  }    
+
+  protected <T> Flux<T> find(
+      InfluxDB influxDb,
+      Query query,
+      int chunkSize,  
+      Class<T> measurementClazz) {
+
+    DirectProcessor<T> processor = DirectProcessor.create();
+    FluxSink<T> sink = processor.sink();
+    
     try {
-      QueryResult queryResult = influxDb.query(query);
-      if (queryResult.hasError()) {
-        return Flux.error(new NoSuchInstrumentException(queryResult.getError()));
-      }
-
       InfluxDBResultMapper resultMapper = new InfluxDBResultMapper();
-      List<T> list = resultMapper.toPOJO(queryResult, measurementClazz);
-      return Flux.fromIterable(list);
+      influxDb.query(query, chunkSize, queryResult -> {
+        if (queryResult.hasError()) {
+          if ("DONE".equals(queryResult.getError())) {
+            sink.complete();
+          } else {
+            sink.error(new NoSuchInstrumentException(queryResult.getError()));
+          }
+        } else {
+          List<T> list = resultMapper.toPOJO(queryResult, measurementClazz);
+          if (list.isEmpty()) {
+            sink.complete();
+          } else {
+            list.forEach(sink::next);            
+          }
+        }
+      });
     } catch (InfluxDBIOException ex) {
       log.log(Level.WARNING, ex.getMessage());
-      return Flux.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
+      sink.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
     }
+
+    return processor;
   }
 
   /**

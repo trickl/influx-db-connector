@@ -13,4 +13,5 @@ public class QueryBetween {
   protected Instant end;
   protected boolean ascending;
   protected Long limit;
+  protected Integer chunkSize;
 }
