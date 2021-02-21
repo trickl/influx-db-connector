@@ -5,6 +5,7 @@ import com.trickl.influxdb.transformers.SportsEventScoreUpdateReader;
 import com.trickl.influxdb.transformers.SportsEventScoreUpdateTransformer;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
 import com.trickl.model.pricing.primitives.PriceSource;
+import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastCount;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -54,13 +55,13 @@ public class SportsEventScoreUpdateClient {
   }
 
   /**
-   * Find all available series that overlap a time window.
+   * Find a summary of outcome updates between a period of time, grouped by instrument.
    *
    * @param queryBetween A time window there series must have a data point within
-   * @return A list of series
+   * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSeries> findSeries(QueryBetween queryBetween) {
-    return influxDbClient.findSeries(
-        queryBetween, CommonDatabases.PRICES.getName(), "sports_event_score_update");
+  public Flux<PriceSourceFieldFirstLastCount> findSummary(QueryBetween queryBetween) {
+    return influxDbClient.findFieldFirstLastCountByDay(
+        queryBetween, CommonDatabases.PRICES.getName(), "sports_event_score_update", "current");
   }
 }

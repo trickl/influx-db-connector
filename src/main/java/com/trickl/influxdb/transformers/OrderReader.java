@@ -6,17 +6,20 @@ import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class OrderReader implements Function<OrderEntity, Order> {
 
   @Override
   public Order apply(OrderEntity orderEntity) {
+    double price = Optional.ofNullable(orderEntity.getPrice()).orElse(Double.NaN);
+    long volume = Optional.ofNullable(orderEntity.getVolume()).orElse(0L);
     return Order.builder()
         .quote(
             Quote.builder()
-                .price(BigDecimal.valueOf(orderEntity.getPrice()))
-                .volume(orderEntity.getVolume())
+                .price(Double.isNaN(price) ? BigDecimal.ZERO : BigDecimal.valueOf(price))
+                .volume(volume)
                 .source(
                     PriceSource.builder()
                         .exchangeId(orderEntity.getExchangeId())

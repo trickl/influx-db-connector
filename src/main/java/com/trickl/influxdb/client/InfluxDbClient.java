@@ -4,14 +4,13 @@ import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.pricing.exceptions.NoSuchInstrumentException;
 import com.trickl.model.pricing.exceptions.ServiceUnavailableException;
 import com.trickl.model.pricing.primitives.PriceSource;
+import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastCount;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +28,7 @@ import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
+import org.influxdb.dto.QueryResult.Series;
 import org.influxdb.impl.InfluxDBResultMapper;
 import reactor.core.publisher.DirectProcessor;
 import reactor.core.publisher.Flux;
@@ -236,22 +236,34 @@ public class InfluxDbClient {
    * @param queryBetween A time window there series must have a data point within
    * @param databaseName the name of the database
    * @param measurementName the name of the measurement
+   * @param fieldName the name of the field to query
    * @return A list of series
    */
-  public Flux<PriceSeries> findSeries(
-      QueryBetween queryBetween, String databaseName, String measurementName) {
-    return Flux.<PriceSeries, InfluxDB>usingWhen(
+  public Flux<PriceSourceFieldFirstLastCount> findFieldFirstLastCountByDay(
+      QueryBetween queryBetween, String databaseName, String measurementName, String fieldName) {
+    return Flux.<PriceSourceFieldFirstLastCount, InfluxDB>usingWhen(
         connectionProvider.getInfluxDb(),
-        influxDb -> findSeries(influxDb, queryBetween, databaseName, measurementName),
+        influxDb -> findFieldFirstLastCountByDay(
+          influxDb, queryBetween, databaseName, measurementName, fieldName),
         influxDb -> Mono.empty());
   }
 
-  protected Flux<PriceSeries> findSeries(
-      InfluxDB influxDb, QueryBetween queryBetween, String databaseName, String measurementName) {
+  protected Flux<PriceSourceFieldFirstLastCount> findFieldFirstLastCountByDay(
+      InfluxDB influxDb,
+      QueryBetween queryBetween,
+      String databaseName,
+      String measurementName,
+      String fieldName) {
     String queryString =
         MessageFormat.format(
-            "SHOW SERIES FROM \"{0}\" WHERE time {1} ''{2}''",
+          "SELECT FIRST({0}) as first, LAST({0}) as last, COUNT({0}) as count " 
+          + "FROM {1} WHERE time {2} ''{3}'' AND time {4} ''{5}'' "
+          + "GROUP BY \"instrumentId\", \"exchangeId\", time(1d)",
+            fieldName,
             measurementName,
+            queryBetween.isStartIncl() ? ">=" : '>',
+            Rfc3339.YMDHMS_FORMATTER.format(
+                ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
             queryBetween.isEndIncl() ? "<=" : '<',
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
@@ -261,51 +273,45 @@ public class InfluxDbClient {
       if (queryResult.hasError()) {
         return Flux.error(new NoSuchInstrumentException(queryResult.getError()));
       }
+      
+      return Mono.just(queryResult.getResults())
+          .filter(Objects::nonNull)
+          .flatMapMany(Flux::fromIterable)
+          .flatMap(result -> {
+            if (result.getError() != null) {
+              return Mono.<PriceSourceFieldFirstLastCount>error(
+                () -> new ServiceUnavailableException(result.getError()));
+            } else if (result.getSeries() == null) {
+              return Mono.<PriceSourceFieldFirstLastCount>empty();
+            } else {
+              return Flux.fromIterable(result.getSeries())
+                .flatMap(InfluxDbClient::parseFieldFirstLastCountResult)
+                .filter(value -> value.getCount() > 0);
+            }
+          });
 
-      List<PriceSeries> priceSeries = new LinkedList<>();
-      queryResult.getResults().stream()
-          .filter(
-              internalResult ->
-                  Objects.nonNull(internalResult) && Objects.nonNull(internalResult.getSeries()))
-          .forEach(
-              internalResult ->
-                  internalResult.getSeries().stream()
-                      .forEachOrdered(
-                          series ->
-                              series
-                                  .getValues()
-                                  .forEach(
-                                      row ->
-                                          row.stream()
-                                              .findFirst()
-                                              .ifPresent(
-                                                  key ->
-                                                      parseSeriesKey((String) key, priceSeries)))));
-
-      return Flux.fromIterable(priceSeries);
     } catch (InfluxDBIOException ex) {
       log.log(Level.WARNING, ex.getMessage());
       return Flux.error(new ServiceUnavailableException("Error connecting to InfluxDB.", ex));
     }
   }
 
-  protected void parseSeriesKey(String seriesKey, List<PriceSeries> priceSeries) {
-    Map<String, String> tagMap =
-        Arrays.asList(seriesKey.split(",")).stream()
-            .skip(1)
-            .map(keyValue -> keyValue.split("=", 2))
-            .collect(
-                Collectors.toMap(
-                    keyValue -> keyValue.length > 0 ? keyValue[0] : null,
-                    keyValue -> keyValue.length > 1 ? keyValue[1] : null));
-
-    priceSeries.add(
-        PriceSeries.builder()
+  protected static Flux<PriceSourceFieldFirstLastCount> 
+      parseFieldFirstLastCountResult(Series series) {
+    Map<String, String> tagMap = series.getTags();
+    
+    return Flux.fromIterable(series.getValues())
+      .map(values ->
+        PriceSourceFieldFirstLastCount.builder()
             .priceSource(
                 PriceSource.builder()
                     .instrumentId(tagMap.get("instrumentId"))
                     .exchangeId(tagMap.get("exchangeId"))
                     .build())
+            .time(Instant.parse((String) values.get(0)))
+            .first((String) values.get(1))
+            .last((String) values.get(2))
+            .count(((Double) values.get(3)).longValue())            
             .build());
   }
 }
