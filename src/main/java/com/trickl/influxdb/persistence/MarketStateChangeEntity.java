@@ -1,5 +1,7 @@
 package com.trickl.influxdb.persistence;
 
+import com.influxdb.annotations.Column;
+import com.influxdb.annotations.Measurement;
 import java.time.Instant;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -7,9 +9,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.influxdb.annotation.Column;
-import org.influxdb.annotation.Measurement;
-import org.influxdb.annotation.TimeColumn;
 
 @Measurement(name = "market_state_change")
 @Builder
@@ -19,8 +18,7 @@ import org.influxdb.annotation.TimeColumn;
 @ToString
 public class MarketStateChangeEntity {
   @NotNull
-  @TimeColumn
-  @Column(name = "time")
+  @Column(name = "time", timestamp = true)
   private Instant time;
 
   @NotNull

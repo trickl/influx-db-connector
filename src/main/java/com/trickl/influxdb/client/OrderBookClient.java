@@ -4,7 +4,7 @@ import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.OrderBook;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
-import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastCount;
+import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,7 +89,7 @@ public class OrderBookClient {
    * @param window A time window there series must have a data point within
    * @return A list of series
    */
-  public Flux<PriceSourceFieldFirstLastCount> findSummary(QueryBetween window) {
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween window) {
     return orderClient.findSummary(window);
   }
 }

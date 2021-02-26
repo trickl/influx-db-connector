@@ -1,8 +1,8 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.InfluxDBClient;
 import com.trickl.influxdb.config.InfluxDbConfiguration;
 import java.io.IOException;
-import org.influxdb.InfluxDB;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -13,9 +13,9 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(classes = InfluxDbConfiguration.class)
 public class CandleClientTest {
 
-  @Mock private InfluxDB influxDb;
+  @Mock private InfluxDBClient influxDb;
 
-  private InfluxDbClient influxDbClient;
+  private InfluxDbAdapter influxDbClient;
 
   private CandleClient candleClient;
 

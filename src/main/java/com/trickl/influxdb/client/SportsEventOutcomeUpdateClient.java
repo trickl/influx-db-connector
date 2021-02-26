@@ -5,7 +5,7 @@ import com.trickl.influxdb.transformers.SportsEventOutcomeUpdateReader;
 import com.trickl.influxdb.transformers.SportsEventOutcomeUpdateTransformer;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
 import com.trickl.model.pricing.primitives.PriceSource;
-import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastCount;
+import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class SportsEventOutcomeUpdateClient {
 
-  private final InfluxDbClient influxDbClient;
+  private final InfluxDbAdapter influxDbClient;
 
   /**
    * Stores prices in the database.
@@ -60,7 +60,7 @@ public class SportsEventOutcomeUpdateClient {
    * @param queryBetween A time window there series must have a data point within
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastCount> findSummary(QueryBetween queryBetween) {
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
         queryBetween, CommonDatabases.PRICES.getName(), "sports_event_outcome_update", "outcome");
   }

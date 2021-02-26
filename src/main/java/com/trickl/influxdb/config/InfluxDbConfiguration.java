@@ -1,9 +1,10 @@
 package com.trickl.influxdb.config;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
+import com.influxdb.client.reactive.InfluxDBClientReactiveFactory;
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
-import com.trickl.influxdb.client.ConnectionProvider;
-import com.trickl.influxdb.client.InfluxDbClient;
+import com.trickl.influxdb.client.InfluxDbAdapter;
 import com.trickl.influxdb.client.InstrumentEventClient;
 import com.trickl.influxdb.client.MarketStateChangeClient;
 import com.trickl.influxdb.client.OrderBookClient;
@@ -17,36 +18,40 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 @Configuration
 public class InfluxDbConfiguration {
 
   @Value("${influx-db.url:}")
   private String url;
 
-  @Value("${influx-db.username:root}")
-  private String username;
+  @Value("${influx-db.token}")
+  private String token;
 
-  @Value("${influx-db.password:root}")
-  private String password;
+  @Value("${influx-db.org}")
+  private String org;
+
+  @Value("${influx-db.database:prices}")
+  private String bucket;
 
   @Bean
-  ConnectionProvider connectionProvider() {
-    return new ConnectionProvider(url, username, password);
+  InfluxDBClientReactive influxDbClient() {
+    return InfluxDBClientReactiveFactory.create(url, token.toCharArray(), org, bucket);
   }
 
   @Bean
-  InfluxDbClient influxDbClient() {
-    return new InfluxDbClient(connectionProvider());
+  InfluxDbAdapter influxDbAdapter() {
+    return new InfluxDbAdapter(influxDbClient(), bucket);
   }
 
   @Bean
   CandleClient influxDbCandleClient() {
-    return new CandleClient(influxDbClient());
+    return new CandleClient(influxDbAdapter());
   }
 
   @Bean
   OrderClient influxDbOrderClient() {
-    return new OrderClient(influxDbClient());
+    return new OrderClient(influxDbAdapter());
   }
 
   @Bean
@@ -56,22 +61,22 @@ public class InfluxDbConfiguration {
 
   @Bean
   MarketStateChangeClient influxDbMarketStateChangeClient() {
-    return new MarketStateChangeClient(influxDbClient());
+    return new MarketStateChangeClient(influxDbAdapter());
   }
 
   @Bean
   SportsEventOutcomeUpdateClient influxDbSportsEventOutcomeUpdateClient() {
-    return new SportsEventOutcomeUpdateClient(influxDbClient());
+    return new SportsEventOutcomeUpdateClient(influxDbAdapter());
   }
 
   @Bean
   SportsEventScoreUpdateClient influxDbSportsEventScoreUpdateClient() {
-    return new SportsEventScoreUpdateClient(influxDbClient());
+    return new SportsEventScoreUpdateClient(influxDbAdapter());
   }
 
   @Bean
   SportsEventIncidentClient influxDbSportsEventIncidentClient() {
-    return new SportsEventIncidentClient(influxDbClient());
+    return new SportsEventIncidentClient(influxDbAdapter());
   }
 
   @Bean
