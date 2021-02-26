@@ -135,7 +135,8 @@ public class InfluxDbAdapter {
         + "|> filter(fn: (r) => r._measurement == \"{1}\" and "
         + "r.exchangeId == \"{2}\" and "
         + "r.instrumentId == \"{3}\""
-        + ") {6} {7}",        
+        + ") |> pivot (rowKey:[\"_time\", \"exchangeId\", \"instrumentId\"], " 
+        + "columnKey: [\"_field\"], valueColumn: \"_value\") {6} {7}",        
         bucket,
         measurementName,
         priceSource.getExchangeId(),
