@@ -164,22 +164,22 @@ public class InfluxDbAdapter {
       QueryBetween queryBetween, String databaseName, String measurementName, String fieldName) {
     
     String flux = MessageFormat.format(
-        "fieldFirstLastDuration = (measurement, field, start, stop) => {\n"
-        + "  firstValue = from(bucket:{0})\n"
+        "fieldFirstLastDuration = (measurement, field, start, stop) => '{'\n"
+        + "  firstValue = from(bucket:\"{0}\")\n"
         + "  |> range(start: start, stop: stop)\n" 
         + "  |> filter(fn: (r) => r._measurement == measurement and r._field == field)\n"
         + "  |> group(columns: [\"instrumentId\", \"exchangeId\"])\n"
         + "  |> first()\n"
         + "\n"
-        + "  lastValue = from(bucket:{0})\n"
+        + "  lastValue = from(bucket:\"{0}\")\n"
         + "    |> range(start: start, stop: stop)\n"
         + "    |> filter(fn: (r) => r._measurement == measurement and r._field == field)\n"
         + "    |> group(columns: [\"instrumentId\", \"exchangeId\"])\n"
         + "    |> last()\n"
         + "\n"
-        + "  return join( tables: {f:firstValue, l:lastValue}, "
+        + "  return join( tables: '{'f:firstValue, l:lastValue'}', "
         + "on: [\"exchangeId\", \"instrumentId\"])\n"
-        + "    |> map(fn: (r) => ({\n"
+        + "    |> map(fn: (r) => ('{'\n"
         + "\n"
         + "      _time: r._time_l,\n"
         + "      duration: string(v: duration(v: uint(v: r._time_l) - uint(v: r._time_f))),\n"
@@ -187,10 +187,10 @@ public class InfluxDbAdapter {
         + "      last: r._value_l,\n"
         + "      exchangeId: r.exchangeId,\n"
         + "      instrumentId: r.instrumentId\n"
-        + "   }))\n"
-        + "}\n"
+        + "   '}'))\n"
+        + "'}'\n"
         + "\n" 
-        + "fieldFirstLastDuration(measurement: {1},"
+        + "fieldFirstLastDuration(measurement: \"{1}\","
         + " field: \"state\", start: {2}, stop: {3})",
         bucket,
         measurementName,
