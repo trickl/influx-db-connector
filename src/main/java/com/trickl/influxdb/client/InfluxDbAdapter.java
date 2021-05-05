@@ -119,10 +119,8 @@ public class InfluxDbAdapter {
       String measurementName,
       Class<T> measurementClazz) {
     
-    String sortClause = "";
-    if (queryBetween.isMostRecentFirst()) {
-      sortClause = "|> sort(columns: [\"_time\"], desc: true)";
-    }
+    String sortClause = MessageFormat.format("|> sort(columns: [\"_time\"], desc: {0})",
+        queryBetween.isMostRecentFirst());
 
     String limitClause = "";
     if (queryBetween.getLimit() != null) {
@@ -135,8 +133,9 @@ public class InfluxDbAdapter {
         + "|> filter(fn: (r) => r._measurement == \"{1}\" and "
         + "r.exchangeId == \"{2}\" and "
         + "r.instrumentId == \"{3}\""
-        + ") |> pivot (rowKey:[\"_time\", \"exchangeId\", \"instrumentId\"], " 
-        + "columnKey: [\"_field\"], valueColumn: \"_value\") {6} {7}",        
+        + ") |> pivot (rowKey:[\"_time\", \"exchangeId\", \"instrumentId\"], "         
+        + "columnKey: [\"_field\"], valueColumn: \"_value\") "
+        + "|> group() {6} {7}",        
         bucket,
         measurementName,
         priceSource.getExchangeId(),
