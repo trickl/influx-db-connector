@@ -5,6 +5,7 @@ import com.influxdb.client.reactive.InfluxDBClientReactiveFactory;
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
 import com.trickl.influxdb.client.InfluxDbAdapter;
+import com.trickl.influxdb.client.InfluxDbAggregator;
 import com.trickl.influxdb.client.InstrumentEventClient;
 import com.trickl.influxdb.client.MarketStateChangeClient;
 import com.trickl.influxdb.client.OrderBookClient;
@@ -45,8 +46,13 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
+  InfluxDbAggregator influxDbAggregator() {
+    return new InfluxDbAggregator(influxDbClient(), bucket, org);
+  }
+
+  @Bean
   CandleClient influxDbCandleClient() {
-    return new CandleClient(influxDbAdapter());
+    return new CandleClient(influxDbAdapter(), influxDbAggregator());
   }
 
   @Bean
@@ -71,12 +77,12 @@ public class InfluxDbConfiguration {
 
   @Bean
   SportsEventScoreUpdateClient influxDbSportsEventScoreUpdateClient() {
-    return new SportsEventScoreUpdateClient(influxDbAdapter());
+    return new SportsEventScoreUpdateClient(influxDbAdapter(), influxDbAggregator());
   }
 
   @Bean
   SportsEventIncidentClient influxDbSportsEventIncidentClient() {
-    return new SportsEventIncidentClient(influxDbAdapter());
+    return new SportsEventIncidentClient(influxDbAdapter(), influxDbAggregator());
   }
 
   @Bean

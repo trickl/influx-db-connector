@@ -29,10 +29,6 @@ public class SportsEventIncidentEntity {
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
 
-  @NotNull
-  @Column(name = "eventId")
-  private String eventId;
-
   @Column(name = "matchTime")
   private String matchTime;
 

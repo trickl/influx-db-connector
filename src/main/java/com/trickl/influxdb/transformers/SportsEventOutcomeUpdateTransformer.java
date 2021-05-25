@@ -17,7 +17,6 @@ public class SportsEventOutcomeUpdateTransformer
     return SportsEventOutcomeUpdateEntity.builder()
         .instrumentId(priceSource.getInstrumentId())
         .exchangeId(priceSource.getExchangeId())
-        .eventId(instrumentEvent.getEventId())
         .time(instrumentEvent.getTime())
         .outcome(
             instrumentEvent.getOutcome() != null ? instrumentEvent.getOutcome().toString() : null)

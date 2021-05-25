@@ -5,8 +5,11 @@ import com.trickl.model.event.MarketStateChange;
 import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
+import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,6 +27,7 @@ public class InstrumentEventClient {
    *
    * @param priceSource the instrument identifier
    * @param events data to store
+   * @return counts of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<InstrumentEvent> events) {
     Mono<Flux<Integer>> storeMarketsChangeEvents =
@@ -65,20 +69,122 @@ public class InstrumentEventClient {
   /**
    * Find events.
    *
-   * @param priceSource the instrument identifier
+   * @param eventSource the instrument identifier
    * @param queryBetween Query parameters
    * @return A list of bars
    */
-  public Flux<InstrumentEvent> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
-    return Flux.merge(
-        marketStateChangeClient.findBetween(priceSource, queryBetween),
-        sportsEventIncidentClient.findBetween(priceSource, queryBetween),
-        sportsEventOutcomeUpdateClient.findBetween(priceSource, queryBetween),
-        sportsEventScoreUpdateClient.findBetween(priceSource, queryBetween))
-        .sort(InstrumentEventClient::compareEventTimes);
+  public Flux<InstrumentEvent> findBetween(EventSource eventSource, QueryBetween queryBetween) {
+    if (eventSource.getEventType() == null) {
+      return Flux.merge(
+              marketStateChangeClient.findBetween(eventSource, queryBetween),
+              sportsEventIncidentClient.findBetween(eventSource, queryBetween),
+              sportsEventOutcomeUpdateClient.findBetween(eventSource, queryBetween),
+              sportsEventScoreUpdateClient.findBetween(eventSource, queryBetween))
+          .sort(InstrumentEventClient::compareEventTimes);
+    }
+
+    boolean isAggregate =
+        isAggregateName(
+            Optional.ofNullable(eventSource.getEventSubType()).orElse(eventSource.getEventType()));
+
+    String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
+    String[] eventTypeParts = eventTypeLowerCase.split("_");
+    String eventTypeBase = eventTypeParts[0];
+
+    if (!isAggregate) {
+      switch (eventTypeBase) {
+        case "market":
+          return marketStateChangeClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "incident":
+          return sportsEventIncidentClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "outcome":
+          return sportsEventOutcomeUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "score":
+          return sportsEventScoreUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        default:
+          return Flux.error(
+              new NoSuchMeasurementTypeException(
+                  "EventType: " + eventSource.getEventType() + " not supported."));
+      }
+    } else {      
+      switch (eventTypeBase) {
+        case "incident":
+          return sportsEventIncidentClient
+              .findAggregatedBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "score":
+          return sportsEventScoreUpdateClient
+              .findAggregatedBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "outcome":
+          return Flux.error(
+              new NoSuchMeasurementTypeException("Aggregate outcome events not supported."));
+        case "market":
+          return Flux.error(
+              new NoSuchMeasurementTypeException("Aggregate market events not supported."));
+        default:
+          return Flux.error(
+              new NoSuchMeasurementTypeException(
+                  "EventType: " + eventSource.getEventType() + " not supported."));
+      }
+    }
+  }
+
+  /**
+   * Find candles.
+   *
+   * @param eventSource the instrument identifier
+   * @param queryBetween Query parameters
+   * @param aggregateEventWidth the period of an aggregation window
+   * @return A list of bars
+   */
+  public Flux<InstrumentEvent> aggregateBetween(
+      EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
+    if (eventSource.getEventType() == null) {
+      return Flux.error(
+          new NoSuchMeasurementTypeException("Can only aggregate specific event types."));
+    }
+
+    String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
+    String[] eventTypeParts = eventTypeLowerCase.split("_");
+    String eventTypeBase = eventTypeParts[0];
+
+    switch (eventTypeBase) {
+      case "market":
+        return Flux.empty();
+      case "incident":
+        return sportsEventIncidentClient
+            .aggregateBetween(eventSource, queryBetween, aggregateEventWidth)
+            .cast(InstrumentEvent.class);
+      case "outcome":
+        return Flux.empty();
+      case "score":
+        return sportsEventScoreUpdateClient
+            .aggregateBetween(eventSource, queryBetween, aggregateEventWidth)
+            .cast(InstrumentEvent.class);
+      default:
+        return Flux.error(
+            new NoSuchMeasurementTypeException(
+                "EventType: " + eventSource.getEventType() + " not supported."));
+    }
   }
 
   protected static int compareEventTimes(InstrumentEvent first, InstrumentEvent second) {
     return first.getTime().compareTo(second.getTime());
+  }
+
+  private boolean isAggregateName(String name) {
+    String[] nameParts = name.split("_");
+    String lastPart = nameParts[nameParts.length - 1];
+    Duration duration = InfluxDbDurationParser.tryParse(lastPart);
+    return duration != null;
   }
 }

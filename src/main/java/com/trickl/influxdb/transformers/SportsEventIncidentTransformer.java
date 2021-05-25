@@ -17,7 +17,6 @@ public class SportsEventIncidentTransformer
     return SportsEventIncidentEntity.builder()
         .instrumentId(priceSource.getInstrumentId())
         .exchangeId(priceSource.getExchangeId())
-        .eventId(instrumentEvent.getEventId())
         .time(instrumentEvent.getTime())
         .matchTime(instrumentEvent.getMatchTime())
         .incidentType(

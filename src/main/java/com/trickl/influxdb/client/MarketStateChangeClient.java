@@ -4,11 +4,15 @@ import com.trickl.influxdb.persistence.MarketStateChangeEntity;
 import com.trickl.influxdb.transformers.MarketStateChangeReader;
 import com.trickl.influxdb.transformers.MarketStateChangeTransformer;
 import com.trickl.model.event.MarketStateChange;
+import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
@@ -20,35 +24,35 @@ public class MarketStateChangeClient {
    * Stores prices in the database.
    *
    * @param priceSource the instrument identifier
-   * @param candles data to store
+   * @param events data to store
+   * @return counts of records stored
    */
-  public Flux<Integer> store(PriceSource priceSource, List<MarketStateChange> candles) {
+  public Flux<Integer> store(PriceSource priceSource, List<MarketStateChange> events) {
     MarketStateChangeTransformer transformer = new MarketStateChangeTransformer(priceSource);
     List<MarketStateChangeEntity> measurements =
-        candles.stream().map(transformer).collect(Collectors.toList());
+        events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
-        measurements,
-        CommonDatabases.PRICES.getName(),
-        MarketStateChangeEntity.class,
-        MarketStateChangeEntity::getTime);
+        measurements, MarketStateChangeEntity.class, MarketStateChangeEntity::getTime);
   }
 
   /**
    * Find candles.
    *
-   * @param priceSource the instrument identifier
+   * @param eventSource the instrument identifier
    * @param queryBetween Query parameters
    * @return A list of bars
    */
-  public Flux<MarketStateChange> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
+  public Flux<MarketStateChange> findBetween(EventSource eventSource, QueryBetween queryBetween) {
     MarketStateChangeReader reader = new MarketStateChangeReader();
     return influxDbClient
         .findBetween(
-            priceSource,
+            eventSource.getPriceSource(),
             queryBetween,
-            CommonDatabases.PRICES.getName(),
             "market_state_change",
-            MarketStateChangeEntity.class)
+            MarketStateChangeEntity.class,
+            eventSource.getEventSubType() != null
+                ? Optional.of(Pair.of("state", Set.of(eventSource.getEventSubType())))
+                : Optional.empty())
         .map(reader);
   }
 
@@ -60,6 +64,6 @@ public class MarketStateChangeClient {
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, CommonDatabases.PRICES.getName(), "market_state_change", "state");
+        queryBetween, "market_state_change", "state");
   }
 }

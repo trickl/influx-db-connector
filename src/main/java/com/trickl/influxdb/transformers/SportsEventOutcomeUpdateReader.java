@@ -11,7 +11,6 @@ public class SportsEventOutcomeUpdateReader
   @Override
   public SportsEventOutcomeUpdate apply(SportsEventOutcomeUpdateEntity instrumentEventEntity) {
     return SportsEventOutcomeUpdate.builder()
-        .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .outcome(instrumentEventEntity.getOutcome() != null 
             ? EventOutcomeType.valueOf(instrumentEventEntity.getOutcome()) : null)

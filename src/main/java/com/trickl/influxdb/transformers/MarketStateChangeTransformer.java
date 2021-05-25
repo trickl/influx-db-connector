@@ -17,7 +17,6 @@ public class MarketStateChangeTransformer
     return MarketStateChangeEntity.builder()
         .instrumentId(priceSource.getInstrumentId())
         .exchangeId(priceSource.getExchangeId())
-        .eventId(instrumentEvent.getEventId())
         .time(instrumentEvent.getTime())
         .state(instrumentEvent.getState() != null ? instrumentEvent.getState().toString() : null)
         .description(instrumentEvent.getDescription())

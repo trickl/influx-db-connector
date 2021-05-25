@@ -23,6 +23,7 @@ public class OrderBookClient {
    *
    * @param priceSource the instrument identifier
    * @param orderBooks data to store
+   * @return counts of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<OrderBook> orderBooks) {
 

@@ -15,7 +15,6 @@ public class SportsEventScoreUpdateReader
   @Override
   public SportsEventScoreUpdate apply(SportsEventScoreUpdateEntity instrumentEventEntity) {
     return SportsEventScoreUpdate.builder()
-        .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .scores(
             SportsEventScores.builder()
@@ -33,7 +32,12 @@ public class SportsEventScoreUpdateReader
         .build();
   }
 
-  protected List<Integer> parseScoreString(String scores) {
+  /**
+   * Parse a score string into a typed score array.
+   * @param scores The score string
+   * @return An array of scores
+   */
+  public static List<Integer> parseScoreString(String scores) {
     if (scores == null) {
       return Collections.emptyList();
     }

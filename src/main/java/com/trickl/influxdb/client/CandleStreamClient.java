@@ -3,7 +3,7 @@ package com.trickl.influxdb.client;
 import com.trickl.flux.mappers.DifferentialMapper;
 import com.trickl.flux.publishers.FixedRateTimePublisher;
 import com.trickl.model.pricing.primitives.Candle;
-import com.trickl.model.pricing.primitives.PriceSource;
+import com.trickl.model.pricing.primitives.CandleSource;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
@@ -24,10 +24,10 @@ public class CandleStreamClient {
   /**
    * Get a live stream of prices for an instrument.
    *
-   * @param priceSource Instrument identifier
+   * @param candleSource Instrument identifier
    * @return A stream of candlesticks
    */
-  public Flux<Candle> get(PriceSource priceSource) {
+  public Flux<Candle> get(CandleSource candleSource) {
 
     FixedRateTimePublisher timePublisher =
         new FixedRateTimePublisher(Duration.ZERO, pollPeriod, timeSupplier, Schedulers.parallel());
@@ -36,11 +36,11 @@ public class CandleStreamClient {
         .get()
         .flatMap(
             new DifferentialMapper<Instant, Candle>(
-                (start, end) -> pollCandlesBetween(priceSource, start, end), null));
+                (start, end) -> pollCandlesBetween(candleSource, start, end), null));
   }
 
   private Publisher<Candle> pollCandlesBetween(
-      PriceSource priceSource, Instant start, Instant end) {
+      CandleSource candleSource, Instant start, Instant end) {
     QueryBetween.QueryBetweenBuilder queryBuilder = QueryBetween.builder();
     queryBuilder.startIncl(false);
     queryBuilder.endIncl(true);
@@ -51,6 +51,6 @@ public class CandleStreamClient {
       queryBuilder.end(end);
     }
 
-    return candleClient.findBetween(priceSource, queryBuilder.build());
+    return candleClient.findBetween(candleSource, queryBuilder.build());
   }
 }

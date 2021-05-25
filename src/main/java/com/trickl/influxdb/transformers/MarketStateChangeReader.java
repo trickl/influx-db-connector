@@ -11,7 +11,6 @@ public class MarketStateChangeReader
   @Override
   public MarketStateChange apply(MarketStateChangeEntity instrumentEventEntity) {
     return MarketStateChange.builder()
-        .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .state(instrumentEventEntity.getState() != null 
             ? MarketState.valueOf(instrumentEventEntity.getState()) : null)

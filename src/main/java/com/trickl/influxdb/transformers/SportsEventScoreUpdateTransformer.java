@@ -21,7 +21,6 @@ public class SportsEventScoreUpdateTransformer
     return SportsEventScoreUpdateEntity.builder()
         .instrumentId(priceSource.getInstrumentId())
         .exchangeId(priceSource.getExchangeId())
-        .eventId(instrumentEvent.getEventId())
         .time(instrumentEvent.getTime())
         .current(toScoreString(scores.getCurrent()))
         .firstHalf(toScoreString(scores.getFirstHalf()))

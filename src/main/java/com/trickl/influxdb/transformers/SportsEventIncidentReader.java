@@ -13,7 +13,6 @@ public class SportsEventIncidentReader
   @Override
   public SportsEventIncident apply(SportsEventIncidentEntity instrumentEventEntity) {
     return SportsEventIncident.builder()
-        .eventId(instrumentEventEntity.getEventId())
         .time(instrumentEventEntity.getTime())
         .matchTime(instrumentEventEntity.getMatchTime())
         .incidentType(instrumentEventEntity.getIncidentType() != null 

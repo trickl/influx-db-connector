@@ -30,10 +30,6 @@ public class MarketStateChangeEntity {
   private String exchangeId;
 
   @NotNull
-  @Column(name = "eventId")
-  private String eventId;
-
-  @NotNull
   @Column(name = "state")
   private String state;
 

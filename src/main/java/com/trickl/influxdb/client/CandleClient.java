@@ -4,8 +4,10 @@ import com.trickl.influxdb.persistence.OhlcvBarEntity;
 import com.trickl.influxdb.transformers.CandleReader;
 import com.trickl.influxdb.transformers.CandleTransformer;
 import com.trickl.model.pricing.primitives.Candle;
+import com.trickl.model.pricing.primitives.CandleSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -14,21 +16,23 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class CandleClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDbAdapter influxDbAdapter;
+
+  private final InfluxDbAggregator influxDbAggregator;
 
   /**
    * Stores prices in the database.
    *
-   * @param priceSource the instrument identifier
+   * @param candleSource the instrument identifier
    * @param candles data to store
+   * @return The stored candles
    */
-  public Flux<Integer> store(PriceSource priceSource, List<Candle> candles) {
-    CandleTransformer transformer = new CandleTransformer(priceSource);
+  public Flux<Integer> store(CandleSource candleSource, List<Candle> candles) {
+    CandleTransformer transformer = new CandleTransformer(candleSource.getPriceSource());
     List<OhlcvBarEntity> measurements =
         candles.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
+    return influxDbAdapter.store(
         measurements,
-        CommonDatabases.PRICES.getName(),
         OhlcvBarEntity.class,
         OhlcvBarEntity::getTime);
   }
@@ -36,19 +40,66 @@ public class CandleClient {
   /**
    * Find candles.
    *
-   * @param priceSource the instrument identifier
+   * @param candleSource the candle source
    * @param queryBetween Query parameters
    * @return A list of bars
    */
-  public Flux<Candle> findBetween(PriceSource priceSource, QueryBetween queryBetween) {
+  public Flux<Candle> findBetween(CandleSource candleSource, QueryBetween queryBetween) {
     CandleReader reader = new CandleReader();
-    return influxDbClient
+    return influxDbAdapter
         .findBetween(
+            candleSource.getPriceSource(),
+            queryBetween,
+            candleSource.getCandleName(),
+            OhlcvBarEntity.class)
+        .map(reader);
+  }
+
+  /**
+   * Aggregate bid orders into candles.
+   *
+   * @param priceSource the instrument identifier
+   * @param queryBetween Query parameters
+   * @param candleWidth candleWidth
+   * @return A list of bars
+   */
+  public Flux<Candle> aggregateBestBidsBetween(
+      PriceSource priceSource, 
+      QueryBetween queryBetween,
+      Duration candleWidth) {
+    String candleWidthPeriod = InfluxDbDurationFormatter.format(candleWidth);
+    CandleReader reader = new CandleReader();
+    return influxDbAggregator
+        .aggregateBestBidOrAskBetween(
             priceSource,
             queryBetween,
-            CommonDatabases.PRICES.getName(),
-            "ohlvc_bar",
-            OhlcvBarEntity.class)
+            "best_bid_" + candleWidthPeriod,
+            true,
+            Duration.ofMinutes(1))
+        .map(reader);
+  }
+
+  /**
+   * Aggregate ask orders into candles.
+   *
+   * @param priceSource the instrument identifier
+   * @param queryBetween Query parameters
+   * @param candleWidth candleWidth
+   * @return A list of bars
+   */
+  public Flux<Candle> aggregateBestAsksBetween(
+      PriceSource priceSource, 
+      QueryBetween queryBetween,
+       Duration candleWidth) {
+    String candleWidthPeriod = InfluxDbDurationFormatter.format(candleWidth);
+    CandleReader reader = new CandleReader();
+    return influxDbAggregator
+        .aggregateBestBidOrAskBetween(
+            priceSource,
+            queryBetween,
+            "best_ask_" + candleWidthPeriod,
+            false,
+            Duration.ofMinutes(1))
         .map(reader);
   }
 
@@ -56,10 +107,12 @@ public class CandleClient {
    * Find a summary of price updates between a period of time, grouped by instrument.
    *
    * @param queryBetween A time window there series must have a data point within
+   * @param candleName Candle name
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
-    return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, CommonDatabases.PRICES.getName(), "ohlcv_bar", "close");
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+      QueryBetween queryBetween, String candleName) {
+    return influxDbAdapter.findFieldFirstLastCountByDay(
+        queryBetween, candleName, "close");
   }
 }

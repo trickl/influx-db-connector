@@ -21,12 +21,13 @@ public class OrderClient {
    *
    * @param priceSource the instrument identifier
    * @param orders data to store
+   * @return counts of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<Order> orders) {
     OrderTransformer transformer = new OrderTransformer(priceSource);
     List<OrderEntity> measurements = orders.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
-        measurements, CommonDatabases.PRICES.getName(), OrderEntity.class, OrderEntity::getTime);
+        measurements, OrderEntity.class, OrderEntity::getTime);
   }
 
   /**
@@ -40,7 +41,7 @@ public class OrderClient {
     OrderReader reader = new OrderReader();
     return influxDbClient
         .findBetween(
-            priceSource, queryBetween, CommonDatabases.PRICES.getName(), "order", OrderEntity.class)
+            priceSource, queryBetween, "order", OrderEntity.class)
         .map(reader);
   }
 
@@ -52,6 +53,6 @@ public class OrderClient {
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, CommonDatabases.PRICES.getName(), "order", "price");
+        queryBetween, "order", "price");
   }
 }

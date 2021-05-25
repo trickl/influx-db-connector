@@ -4,6 +4,7 @@ import com.trickl.influxdb.persistence.SportsEventOutcomeUpdateEntity;
 import com.trickl.influxdb.transformers.SportsEventOutcomeUpdateReader;
 import com.trickl.influxdb.transformers.SportsEventOutcomeUpdateTransformer;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
+import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.util.List;
@@ -21,6 +22,7 @@ public class SportsEventOutcomeUpdateClient {
    *
    * @param priceSource the instrument identifier
    * @param events data to store
+   * @return the number of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<SportsEventOutcomeUpdate> events) {
     SportsEventOutcomeUpdateTransformer transformer =
@@ -29,7 +31,6 @@ public class SportsEventOutcomeUpdateClient {
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
         measurements,
-        CommonDatabases.PRICES.getName(),
         SportsEventOutcomeUpdateEntity.class,
         SportsEventOutcomeUpdateEntity::getTime);
   }
@@ -37,18 +38,21 @@ public class SportsEventOutcomeUpdateClient {
   /**
    * Find candles.
    *
-   * @param priceSource the instrument identifier
+   * @param eventSource the instrument identifier
    * @param queryBetween Query parameters
    * @return A list of bars
    */
   public Flux<SportsEventOutcomeUpdate> findBetween(
-      PriceSource priceSource, QueryBetween queryBetween) {
+      EventSource eventSource, QueryBetween queryBetween) {
     SportsEventOutcomeUpdateReader reader = new SportsEventOutcomeUpdateReader();
+    if (eventSource.getEventSubType() != null) {
+      // Sub-types not supported
+      return Flux.empty();
+    }
     return influxDbClient
         .findBetween(
-            priceSource,
+            eventSource.getPriceSource(),
             queryBetween,
-            CommonDatabases.PRICES.getName(),
             "sports_event_outcome_update",
             SportsEventOutcomeUpdateEntity.class)
         .map(reader);
@@ -62,6 +66,6 @@ public class SportsEventOutcomeUpdateClient {
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, CommonDatabases.PRICES.getName(), "sports_event_outcome_update", "outcome");
+        queryBetween, "sports_event_outcome_update", "outcome");
   }
 }

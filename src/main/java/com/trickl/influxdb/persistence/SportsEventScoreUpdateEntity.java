@@ -29,10 +29,6 @@ public class SportsEventScoreUpdateEntity {
   @Column(name = "exchangeId", tag = true)
   private String exchangeId;
 
-  @NotNull
-  @Column(name = "eventId")
-  private String eventId;
-
   @Column(name = "current")
   private String current;
 
