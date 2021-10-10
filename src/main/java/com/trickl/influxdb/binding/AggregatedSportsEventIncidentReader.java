@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.AggregatedSportsEventIncidentEntity;
 import com.trickl.model.event.AggregatedInstrumentEvents;
@@ -56,8 +56,8 @@ public class AggregatedSportsEventIncidentReader
                     : null)
             .build();
     return AggregatedInstrumentEvents.builder()
-        .exchangeId(instrumentEventEntity.getExchangeId())
-        .code(instrumentEventEntity.getInstrumentId())
+        .exchangeId(instrumentEventEntity.getExchangeId().toUpperCase())
+        .code(instrumentEventEntity.getInstrumentId().toUpperCase())
         .time(instrumentEventEntity.getTime())
         .firstEvent(firstEvent)
         .lastEvent(lastEvent)

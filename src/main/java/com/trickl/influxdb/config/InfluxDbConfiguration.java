@@ -11,7 +11,9 @@ import com.trickl.influxdb.client.MarketStateChangeClient;
 import com.trickl.influxdb.client.OrderBookClient;
 import com.trickl.influxdb.client.OrderClient;
 import com.trickl.influxdb.client.SportsEventIncidentClient;
+import com.trickl.influxdb.client.SportsEventMatchTimeUpdateClient;
 import com.trickl.influxdb.client.SportsEventOutcomeUpdateClient;
+import com.trickl.influxdb.client.SportsEventPeriodUpdateClient;
 import com.trickl.influxdb.client.SportsEventScoreUpdateClient;
 import java.time.Duration;
 import java.time.Instant;
@@ -81,6 +83,16 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
+  SportsEventPeriodUpdateClient influxDbSportsEventPeriodUpdateClient() {
+    return new SportsEventPeriodUpdateClient(influxDbAdapter());
+  }
+
+  @Bean
+  SportsEventMatchTimeUpdateClient influxDbSportsEventMatchTimeUpdateClient() {
+    return new SportsEventMatchTimeUpdateClient(influxDbAdapter(), influxDbAggregator());
+  }
+
+  @Bean
   SportsEventIncidentClient influxDbSportsEventIncidentClient() {
     return new SportsEventIncidentClient(influxDbAdapter(), influxDbAggregator());
   }
@@ -91,7 +103,9 @@ public class InfluxDbConfiguration {
         influxDbMarketStateChangeClient(),
         influxDbSportsEventIncidentClient(),
         influxDbSportsEventOutcomeUpdateClient(),
-        influxDbSportsEventScoreUpdateClient());
+        influxDbSportsEventScoreUpdateClient(),
+        influxDbSportsEventPeriodUpdateClient(),
+        influxDbSportsEventMatchTimeUpdateClient());
   }
 
   @Bean

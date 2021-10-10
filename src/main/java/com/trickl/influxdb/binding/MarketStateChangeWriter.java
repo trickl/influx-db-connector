@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.MarketStateChangeEntity;
 import com.trickl.model.event.MarketStateChange;
@@ -7,7 +7,7 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class MarketStateChangeTransformer
+public class MarketStateChangeWriter
     implements Function<MarketStateChange, MarketStateChangeEntity> {
 
   private final PriceSource priceSource;
@@ -15,8 +15,8 @@ public class MarketStateChangeTransformer
   @Override
   public MarketStateChangeEntity apply(MarketStateChange instrumentEvent) {
     return MarketStateChangeEntity.builder()
-        .instrumentId(priceSource.getInstrumentId())
-        .exchangeId(priceSource.getExchangeId())
+        .instrumentId(priceSource.getInstrumentId().toUpperCase())
+        .exchangeId(priceSource.getExchangeId().toUpperCase())
         .time(instrumentEvent.getTime())
         .state(instrumentEvent.getState() != null ? instrumentEvent.getState().toString() : null)
         .description(instrumentEvent.getDescription())

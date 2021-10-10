@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.BidOrAskFlags;
 import com.trickl.influxdb.persistence.OrderEntity;
@@ -11,7 +11,7 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class OrderTransformer implements Function<Order, OrderEntity> {
+public class OrderWriter implements Function<Order, OrderEntity> {
 
   private final PriceSource priceSource;
 
@@ -19,8 +19,8 @@ public class OrderTransformer implements Function<Order, OrderEntity> {
   public OrderEntity apply(Order order) {
     Quote quote = order.getQuote();
     return OrderEntity.builder()
-        .instrumentId(priceSource.getInstrumentId())
-        .exchangeId(priceSource.getExchangeId())
+        .instrumentId(priceSource.getInstrumentId().toUpperCase())
+        .exchangeId(priceSource.getExchangeId().toUpperCase())
         .price(Optional.ofNullable(quote.getPrice()).map(BigDecimal::doubleValue).orElse(null))
         .volume(quote.getVolume())
         .bidOrAsk(order.isBid() ? BidOrAskFlags.BID : BidOrAskFlags.ASK)

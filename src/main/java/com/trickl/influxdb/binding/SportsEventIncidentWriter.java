@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.SportsEventIncidentEntity;
 import com.trickl.model.event.sports.SportsEventIncident;
@@ -7,7 +7,7 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class SportsEventIncidentTransformer
+public class SportsEventIncidentWriter
     implements Function<SportsEventIncident, SportsEventIncidentEntity> {
 
   private final PriceSource priceSource;
@@ -15,8 +15,8 @@ public class SportsEventIncidentTransformer
   @Override
   public SportsEventIncidentEntity apply(SportsEventIncident instrumentEvent) {
     return SportsEventIncidentEntity.builder()
-        .instrumentId(priceSource.getInstrumentId())
-        .exchangeId(priceSource.getExchangeId())
+        .instrumentId(priceSource.getInstrumentId().toUpperCase())
+        .exchangeId(priceSource.getExchangeId().toUpperCase())
         .time(instrumentEvent.getTime())
         .matchTime(instrumentEvent.getMatchTime())
         .incidentType(

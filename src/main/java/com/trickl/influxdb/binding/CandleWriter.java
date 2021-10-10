@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.OhlcvBarEntity;
 import com.trickl.model.pricing.primitives.Candle;
@@ -9,15 +9,15 @@ import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class CandleTransformer implements Function<Candle, OhlcvBarEntity> {
+public class CandleWriter implements Function<Candle, OhlcvBarEntity> {
 
   private final PriceSource priceSource;
 
   @Override
   public OhlcvBarEntity apply(Candle candle) {
     return OhlcvBarEntity.builder()
-        .instrumentId(priceSource.getInstrumentId())
-        .exchangeId(priceSource.getExchangeId())
+        .instrumentId(priceSource.getInstrumentId().toUpperCase())
+        .exchangeId(priceSource.getExchangeId().toUpperCase())
         .time(candle.getTime())
         .open(Optional.ofNullable(candle.getOpen()).map(BigDecimal::doubleValue).orElse(null))
         .high(Optional.ofNullable(candle.getHigh()).map(BigDecimal::doubleValue).orElse(null))

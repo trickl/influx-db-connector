@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.MarketStateChangeEntity;
 import com.trickl.model.event.MarketStateChange;

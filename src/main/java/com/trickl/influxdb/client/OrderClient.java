@@ -1,8 +1,8 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.binding.OrderReader;
+import com.trickl.influxdb.binding.OrderWriter;
 import com.trickl.influxdb.persistence.OrderEntity;
-import com.trickl.influxdb.transformers.OrderReader;
-import com.trickl.influxdb.transformers.OrderTransformer;
 import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
@@ -24,7 +24,7 @@ public class OrderClient {
    * @return counts of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<Order> orders) {
-    OrderTransformer transformer = new OrderTransformer(priceSource);
+    OrderWriter transformer = new OrderWriter(priceSource);
     List<OrderEntity> measurements = orders.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
         measurements, OrderEntity.class, OrderEntity::getTime);

@@ -3,6 +3,7 @@ package com.trickl.influxdb.client;
 import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.influxdb.client.reactive.QueryReactiveApi;
 import com.trickl.influxdb.persistence.AggregatedSportsEventIncidentEntity;
+import com.trickl.influxdb.persistence.AggregatedSportsEventMatchTimeUpdateEntity;
 import com.trickl.influxdb.persistence.AggregatedSportsEventScoreUpdateEntity;
 import com.trickl.influxdb.persistence.OhlcvBarEntity;
 import com.trickl.influxdb.text.Rfc3339;
@@ -77,8 +78,8 @@ public class InfluxDbAggregator {
                 + "  fieldFn: (r) => ('{'\"open\": r.open, \"high\": r.high,"
                 + " \"low\": r.low, \"close\": r.close'}'))",
             bucket,
-            priceSource.getExchangeId(),
-            priceSource.getInstrumentId(),
+            priceSource.getExchangeId().toUpperCase(),
+            priceSource.getInstrumentId().toUpperCase(),
             isBidRequest ? 'B' : 'A',
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
@@ -165,8 +166,8 @@ public class InfluxDbAggregator {
                 + " \"lastSide\": if exists r.lastSide then r.lastSide else \"\",\n"
                 + " \"count\": r.count'}'))",
             bucket,
-            priceSource.getExchangeId(),
-            priceSource.getInstrumentId(),
+            priceSource.getExchangeId().toUpperCase(),
+            priceSource.getInstrumentId().toUpperCase(),
             additionalFilterClause,
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
@@ -304,8 +305,8 @@ public class InfluxDbAggregator {
                 + " \"\",\n"
                 + " \"count\": r.count'}'))",
             bucket,
-            priceSource.getExchangeId(),
-            priceSource.getInstrumentId(),
+            priceSource.getExchangeId().toUpperCase(),
+            priceSource.getInstrumentId().toUpperCase(),
             additionalFilterClause,
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
@@ -318,5 +319,100 @@ public class InfluxDbAggregator {
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
     return RxJava2Adapter.flowableToFlux(
         queryApi.query(flux, AggregatedSportsEventScoreUpdateEntity.class));
+  }
+
+  /**
+   * Aggregate match time updates into event aggregates.
+   *
+   * @param priceSource The source of prices
+   * @param queryBetween A time window there series must have a data point within
+   * @param measurementName the target measurment name
+   * @param aggregateEventWidth the width of aggregated events
+   * @param filter an optional filter for fields
+   * @return A list of series
+   */
+  public Flux<AggregatedSportsEventMatchTimeUpdateEntity>
+      aggregateSportsEventMatchTimeUpdatesBetween(
+          PriceSource priceSource,
+          QueryBetween queryBetween,
+          String measurementName,
+          Duration aggregateEventWidth,
+          Optional<Pair<String, Set<String>>> filter) {
+    String aggWidthPeriod = InfluxDbDurationFormatter.format(aggregateEventWidth);
+
+    String additionalFilterClause =
+        filter.isPresent() ? FluxStatementFilterBuilder.buildFrom(filter.get()) : "";
+
+    String flux =
+        MessageFormat.format(
+            "from(bucket:\"{0}\")\n"
+                + "|> range(start: {4}, stop: {5})\n"
+                + "|> filter(fn: (r) => r._measurement == \"sports_event_match_time_update\" and\n"
+                + "  r.exchangeId == \"{1}\" and\n"
+                + "  r.instrumentId == \"{2}\")\n"
+                + "|> pivot (rowKey:[\"_time\", \"exchangeId\", \"instrumentId\"], columnKey:"
+                + " [\"_field\"], valueColumn: \"_value\")\n"
+                + "{3}|> drop(columns: [\"_field\", \"_measurement\"])\n"
+                + "|> sort(columns: [\"_time\"], desc: false)\n"
+                + "|> window(every: {6})\n"
+                + "|> reduce(fn: (r, accumulator) => ('{'\n"
+                + " firstTime: if accumulator.count == 0 then string(v: r._time) else"
+                + " accumulator.firstTime,\n"
+                + " firstMatchTime: if accumulator.count == 0 and exists r.matchTime then"
+                + " r.matchTime else accumulator.firstMatchTime,\n"
+                + " firstRemainingTime: if accumulator.count == 0 and exists r.remainingTime then"
+                + " r.remainingTime else accumulator.firstRemainingTime,\n"
+                + " firstRemainingTimeInPeriod: if accumulator.count == 0 and exists"
+                + " r.remainingTimeInPeriod then r.remainingTimeInPeriod else"
+                + " accumulator.firstRemainingTimeInPeriod,\n"
+                + " lastTime: string(v: r._time),\n"
+                + " lastMatchTime: if exists r.matchTime then r.matchTime else \"\",\n"
+                + " lastRemainingTime: if exists r.remainingTime then r.remainingTime else \"\",\n"
+                + " lastRemainingTimeInPeriod: if exists r.remainingTimeInPeriod then"
+                + " r.remainingTimeInPeriod else \"\",\n"
+                + " count: accumulator.count + 1'}'),\n"
+                + "identity: '{'\n"
+                + " firstTime: \"1970-01-01T00:00:00Z\", firstMatchTime: \"\", firstRemainingTime:"
+                + " \"\", firstRemainingTimeInPeriod: \"\", lastTime: \"1970-01-01T00:00:00Z\", "
+                + " lastMatchTime: \"\", lastRemainingTime: \"\", lastRemainingTimeInPeriod: \"\","
+                + " count: 0'}')\n"
+                + "|> duplicate(column: \"_stop\", as: \"_time\")\n"
+                + "|> set(key: \"_measurement\", value: \"{7}\")\n"
+                + "|> to(\n"
+                + "  bucket: \"{0}\",\n"
+                + "  org: \"{8}\",\n"
+                + "  tagColumns: [\"exchangeId\", \"instrumentId\"],\n"
+                + "  fieldFn: (r) => ('{'\n"
+                + " \"firstTime\": if exists r.firstTime then string(v: r.firstTime) else"
+                + " \"1970-01-01T00:00:00Z\",\n"
+                + " \"firstMatchTime\": if exists r.firstMatchTime then r.firstMatchTime else"
+                + " \"\",\n"
+                + " \"firstRemainingTime\": if exists r.firstRemainingTime then"
+                + " r.firstRemainingTime else \"\",\n"
+                + " \"firstRemainingTimeInPeriod\": if exists r.firstRemainingTimeInPeriod then"
+                + " r.firstRemainingTimeInPeriod else \"\",\n"
+                + " \"lastTime\": if exists r.lastTime then string(v: r.lastTime) else"
+                + " \"1970-01-01T00:00:00Z\",\n"
+                + " \"lastMatchTime\": if exists r.lastMatchTime then r.lastMatchTime else \"\",\n"
+                + " \"lastRemainingTime\": if exists r.lastRemainingTime then r.lastRemainingTime"
+                + " else \"\",\n"
+                + " \"lastRemainingTimeInPeriod\": if exists r.lastRemainingTimeInPeriod then"
+                + " r.lastRemainingTimeInPeriod else \"\",\n"
+                + " \"count\": r.count'}'))",
+            bucket,
+            priceSource.getExchangeId().toUpperCase(),
+            priceSource.getInstrumentId().toUpperCase(),
+            additionalFilterClause,
+            Rfc3339.YMDHMS_FORMATTER.format(
+                ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
+            Rfc3339.YMDHMS_FORMATTER.format(
+                ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)),
+            aggWidthPeriod,
+            measurementName,
+            organisation);
+
+    QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
+    return RxJava2Adapter.flowableToFlux(
+        queryApi.query(flux, AggregatedSportsEventMatchTimeUpdateEntity.class));
   }
 }

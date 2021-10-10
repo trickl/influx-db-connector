@@ -1,12 +1,12 @@
 package com.trickl.influxdb.client;
 
-import com.trickl.influxdb.binding.AggregatedSportsEventScoreUpdateReader;
-import com.trickl.influxdb.binding.SportsEventScoreUpdateReader;
-import com.trickl.influxdb.binding.SportsEventScoreUpdateWriter;
-import com.trickl.influxdb.persistence.AggregatedSportsEventScoreUpdateEntity;
-import com.trickl.influxdb.persistence.SportsEventScoreUpdateEntity;
+import com.trickl.influxdb.binding.AggregatedSportsEventMatchTimeUpdateReader;
+import com.trickl.influxdb.binding.SportsEventMatchTimeUpdateReader;
+import com.trickl.influxdb.binding.SportsEventMatchTimeUpdateWriter;
+import com.trickl.influxdb.persistence.AggregatedSportsEventMatchTimeUpdateEntity;
+import com.trickl.influxdb.persistence.SportsEventMatchTimeUpdateEntity;
 import com.trickl.model.event.AggregatedInstrumentEvents;
-import com.trickl.model.event.sports.SportsEventScoreUpdate;
+import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
-public class SportsEventScoreUpdateClient {
+public class SportsEventMatchTimeUpdateClient {
 
   private final InfluxDbAdapter influxDbClient;
 
@@ -31,13 +31,15 @@ public class SportsEventScoreUpdateClient {
    * @param events data to store
    * @return the number of records stored
    */
-  public Flux<Integer> store(PriceSource priceSource, List<SportsEventScoreUpdate> events) {
-    SportsEventScoreUpdateWriter transformer =
-        new SportsEventScoreUpdateWriter(priceSource);
-    List<SportsEventScoreUpdateEntity> measurements =
+  public Flux<Integer> store(PriceSource priceSource, List<SportsEventMatchTimeUpdate> events) {
+    SportsEventMatchTimeUpdateWriter transformer =
+        new SportsEventMatchTimeUpdateWriter(priceSource);
+    List<SportsEventMatchTimeUpdateEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
-        measurements, SportsEventScoreUpdateEntity.class, SportsEventScoreUpdateEntity::getTime);
+        measurements,
+        SportsEventMatchTimeUpdateEntity.class,
+        SportsEventMatchTimeUpdateEntity::getTime);
   }
 
   /**
@@ -47,9 +49,9 @@ public class SportsEventScoreUpdateClient {
    * @param queryBetween Query parameters
    * @return A list of bars
    */
-  public Flux<SportsEventScoreUpdate> findBetween(
+  public Flux<SportsEventMatchTimeUpdate> findBetween(
       EventSource eventSource, QueryBetween queryBetween) {
-    SportsEventScoreUpdateReader reader = new SportsEventScoreUpdateReader();
+    SportsEventMatchTimeUpdateReader reader = new SportsEventMatchTimeUpdateReader();
     if (eventSource.getEventSubType() != null) {
       // Sub-types not supported
       return Flux.empty();
@@ -58,8 +60,8 @@ public class SportsEventScoreUpdateClient {
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
-            "sports_event_score_update",
-            SportsEventScoreUpdateEntity.class)
+            "sports_event_match_time_update",
+            SportsEventMatchTimeUpdateEntity.class)
         .map(reader);
   }
 
@@ -72,14 +74,15 @@ public class SportsEventScoreUpdateClient {
    */
   public Flux<AggregatedInstrumentEvents> findAggregatedBetween(
       EventSource eventSource, QueryBetween queryBetween) {
-    AggregatedSportsEventScoreUpdateReader reader = new AggregatedSportsEventScoreUpdateReader();
+    AggregatedSportsEventMatchTimeUpdateReader reader =
+        new AggregatedSportsEventMatchTimeUpdateReader();
 
     return influxDbClient
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
             eventSource.getEventType(),
-            AggregatedSportsEventScoreUpdateEntity.class,
+            AggregatedSportsEventMatchTimeUpdateEntity.class,
             Optional.empty())
         .map(reader);
   }
@@ -94,10 +97,11 @@ public class SportsEventScoreUpdateClient {
    */
   public Flux<AggregatedInstrumentEvents> aggregateBetween(
       EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
-    AggregatedSportsEventScoreUpdateReader reader = new AggregatedSportsEventScoreUpdateReader();
-    String measurementName = eventSource.getEventType();    
+    AggregatedSportsEventMatchTimeUpdateReader reader =
+        new AggregatedSportsEventMatchTimeUpdateReader();
+    String measurementName = eventSource.getEventType();
     return influxDbAggregator
-        .aggregateSportsEventScoreUpdatesBetween(
+        .aggregateSportsEventMatchTimeUpdatesBetween(
             eventSource.getPriceSource(),
             queryBetween,
             measurementName,
@@ -114,6 +118,6 @@ public class SportsEventScoreUpdateClient {
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "sports_event_score_update", "current");
+        queryBetween, "sports_event_match_time_update", "remaining_time");
   }
 }

@@ -173,8 +173,8 @@ public class InfluxDbAdapter {
                 + "|> group()\n{6}{7}",
             bucket,
             measurementName,
-            priceSource.getExchangeId(),
-            priceSource.getInstrumentId(),
+            priceSource.getExchangeId().toUpperCase(),
+            priceSource.getInstrumentId().toUpperCase(),
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
             Rfc3339.YMDHMS_FORMATTER.format(

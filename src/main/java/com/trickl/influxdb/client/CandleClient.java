@@ -1,8 +1,8 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.binding.CandleReader;
+import com.trickl.influxdb.binding.CandleWriter;
 import com.trickl.influxdb.persistence.OhlcvBarEntity;
-import com.trickl.influxdb.transformers.CandleReader;
-import com.trickl.influxdb.transformers.CandleTransformer;
 import com.trickl.model.pricing.primitives.Candle;
 import com.trickl.model.pricing.primitives.CandleSource;
 import com.trickl.model.pricing.primitives.PriceSource;
@@ -28,7 +28,7 @@ public class CandleClient {
    * @return The stored candles
    */
   public Flux<Integer> store(CandleSource candleSource, List<Candle> candles) {
-    CandleTransformer transformer = new CandleTransformer(candleSource.getPriceSource());
+    CandleWriter transformer = new CandleWriter(candleSource.getPriceSource());
     List<OhlcvBarEntity> measurements =
         candles.stream().map(transformer).collect(Collectors.toList());
     return influxDbAdapter.store(

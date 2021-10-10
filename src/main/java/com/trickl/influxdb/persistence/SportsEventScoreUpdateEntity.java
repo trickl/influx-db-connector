@@ -53,6 +53,27 @@ public class SportsEventScoreUpdateEntity {
   @Column(name = "setTwo")
   private String setTwo;
 
+  @Column(name = "setThree")
+  private String setThree;
+
+  @Column(name = "setFour")
+  private String setFour;
+
+  @Column(name = "setFive")
+  private String setFive;
+
+  @Column(name = "quarterOne")
+  private String quarterOne;
+
+  @Column(name = "quarterTwo")
+  private String quarterTwo;
+
+  @Column(name = "quarterThree")
+  private String quarterThree;
+
+  @Column(name = "quarterFour")
+  private String quarterFour;
+
   @Column(name = "sets")
   private String sets;
 

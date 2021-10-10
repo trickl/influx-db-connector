@@ -1,9 +1,9 @@
 package com.trickl.influxdb.client;
 
-import com.trickl.influxdb.binding.SportsEventOutcomeUpdateReader;
-import com.trickl.influxdb.binding.SportsEventOutcomeUpdateWriter;
-import com.trickl.influxdb.persistence.SportsEventOutcomeUpdateEntity;
-import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
+import com.trickl.influxdb.binding.SportsEventPeriodUpdateReader;
+import com.trickl.influxdb.binding.SportsEventPeriodUpdateWriter;
+import com.trickl.influxdb.persistence.SportsEventPeriodUpdateEntity;
+import com.trickl.model.event.sports.SportsEventPeriodUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
-public class SportsEventOutcomeUpdateClient {
+public class SportsEventPeriodUpdateClient {
 
   private final InfluxDbAdapter influxDbClient;
 
@@ -24,27 +24,25 @@ public class SportsEventOutcomeUpdateClient {
    * @param events data to store
    * @return the number of records stored
    */
-  public Flux<Integer> store(PriceSource priceSource, List<SportsEventOutcomeUpdate> events) {
-    SportsEventOutcomeUpdateWriter transformer =
-        new SportsEventOutcomeUpdateWriter(priceSource);
-    List<SportsEventOutcomeUpdateEntity> measurements =
+  public Flux<Integer> store(PriceSource priceSource, List<SportsEventPeriodUpdate> events) {
+    SportsEventPeriodUpdateWriter transformer =
+        new SportsEventPeriodUpdateWriter(priceSource);
+    List<SportsEventPeriodUpdateEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
-        measurements,
-        SportsEventOutcomeUpdateEntity.class,
-        SportsEventOutcomeUpdateEntity::getTime);
+        measurements, SportsEventPeriodUpdateEntity.class, SportsEventPeriodUpdateEntity::getTime);
   }
 
   /**
-   * Find candles.
+   * Find sports updates.
    *
    * @param eventSource the instrument identifier
    * @param queryBetween Query parameters
    * @return A list of bars
    */
-  public Flux<SportsEventOutcomeUpdate> findBetween(
+  public Flux<SportsEventPeriodUpdate> findBetween(
       EventSource eventSource, QueryBetween queryBetween) {
-    SportsEventOutcomeUpdateReader reader = new SportsEventOutcomeUpdateReader();
+    SportsEventPeriodUpdateReader reader = new SportsEventPeriodUpdateReader();
     if (eventSource.getEventSubType() != null) {
       // Sub-types not supported
       return Flux.empty();
@@ -53,8 +51,8 @@ public class SportsEventOutcomeUpdateClient {
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
-            "sports_event_outcome_update",
-            SportsEventOutcomeUpdateEntity.class)
+            "sports_event_period_update",
+            SportsEventPeriodUpdateEntity.class)
         .map(reader);
   }
 
@@ -66,6 +64,6 @@ public class SportsEventOutcomeUpdateClient {
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "sports_event_outcome_update", "outcome");
+        queryBetween, "sports_event_period_update", "period");
   }
 }

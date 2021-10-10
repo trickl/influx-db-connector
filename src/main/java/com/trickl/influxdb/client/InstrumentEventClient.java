@@ -3,7 +3,9 @@ package com.trickl.influxdb.client;
 import com.trickl.model.event.InstrumentEvent;
 import com.trickl.model.event.MarketStateChange;
 import com.trickl.model.event.sports.SportsEventIncident;
+import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
+import com.trickl.model.event.sports.SportsEventPeriodUpdate;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
@@ -21,6 +23,8 @@ public class InstrumentEventClient {
   private final SportsEventIncidentClient sportsEventIncidentClient;
   private final SportsEventOutcomeUpdateClient sportsEventOutcomeUpdateClient;
   private final SportsEventScoreUpdateClient sportsEventScoreUpdateClient;
+  private final SportsEventPeriodUpdateClient sportsEventPeriodUpdateClient;
+  private final SportsEventMatchTimeUpdateClient sportsEventMatchTimeUpdateClient;
 
   /**
    * Stores events in the database.
@@ -58,11 +62,27 @@ public class InstrumentEventClient {
             .collectList()
             .map(list -> sportsEventScoreUpdateClient.store(priceSource, list));
 
+    Mono<Flux<Integer>> storeSportsEventPeriodUpdates =
+        Flux.fromIterable(events)
+            .filter(event -> event instanceof SportsEventPeriodUpdate)
+            .cast(SportsEventPeriodUpdate.class)
+            .collectList()
+            .map(list -> sportsEventPeriodUpdateClient.store(priceSource, list));
+
+    Mono<Flux<Integer>> storeSportsEventMatchTimeUpdates =
+        Flux.fromIterable(events)
+            .filter(event -> event instanceof SportsEventMatchTimeUpdate)
+            .cast(SportsEventMatchTimeUpdate.class)
+            .collectList()
+            .map(list -> sportsEventMatchTimeUpdateClient.store(priceSource, list));
+
     return Flux.merge(
             storeMarketsChangeEvents,
             storeSportsEventIncidents,
             storeSportsEventOutcomeUpdates,
-            storeSportsEventScoreUpdates)
+            storeSportsEventScoreUpdates,
+            storeSportsEventPeriodUpdates,
+            storeSportsEventMatchTimeUpdates)
         .flatMap(rows -> rows);
   }
 
@@ -79,7 +99,9 @@ public class InstrumentEventClient {
               marketStateChangeClient.findBetween(eventSource, queryBetween),
               sportsEventIncidentClient.findBetween(eventSource, queryBetween),
               sportsEventOutcomeUpdateClient.findBetween(eventSource, queryBetween),
-              sportsEventScoreUpdateClient.findBetween(eventSource, queryBetween))
+              sportsEventScoreUpdateClient.findBetween(eventSource, queryBetween),
+              sportsEventPeriodUpdateClient.findBetween(eventSource, queryBetween),
+              sportsEventMatchTimeUpdateClient.findBetween(eventSource, queryBetween))
           .sort(InstrumentEventClient::compareEventTimes);
     }
 
@@ -109,12 +131,20 @@ public class InstrumentEventClient {
           return sportsEventScoreUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
+        case "period":
+          return sportsEventPeriodUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case "match_time":
+          return sportsEventMatchTimeUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
         default:
           return Flux.error(
               new NoSuchMeasurementTypeException(
                   "EventType: " + eventSource.getEventType() + " not supported."));
       }
-    } else {      
+    } else {
       switch (eventTypeBase) {
         case "incident":
           return sportsEventIncidentClient
@@ -124,9 +154,16 @@ public class InstrumentEventClient {
           return sportsEventScoreUpdateClient
               .findAggregatedBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
+        case "match_time":
+          return sportsEventMatchTimeUpdateClient
+              .findAggregatedBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
         case "outcome":
           return Flux.error(
               new NoSuchMeasurementTypeException("Aggregate outcome events not supported."));
+        case "period":
+          return Flux.error(
+              new NoSuchMeasurementTypeException("Aggregate period events not supported."));
         case "market":
           return Flux.error(
               new NoSuchMeasurementTypeException("Aggregate market events not supported."));
@@ -166,8 +203,14 @@ public class InstrumentEventClient {
             .cast(InstrumentEvent.class);
       case "outcome":
         return Flux.empty();
+      case "period":
+        return Flux.empty();
       case "score":
         return sportsEventScoreUpdateClient
+            .aggregateBetween(eventSource, queryBetween, aggregateEventWidth)
+            .cast(InstrumentEvent.class);
+      case "match_time":
+        return sportsEventMatchTimeUpdateClient
             .aggregateBetween(eventSource, queryBetween, aggregateEventWidth)
             .cast(InstrumentEvent.class);
       default:

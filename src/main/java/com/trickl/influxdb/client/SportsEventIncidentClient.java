@@ -1,10 +1,10 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.binding.AggregatedSportsEventIncidentReader;
+import com.trickl.influxdb.binding.SportsEventIncidentReader;
+import com.trickl.influxdb.binding.SportsEventIncidentWriter;
 import com.trickl.influxdb.persistence.AggregatedSportsEventIncidentEntity;
 import com.trickl.influxdb.persistence.SportsEventIncidentEntity;
-import com.trickl.influxdb.transformers.AggregatedSportsEventIncidentReader;
-import com.trickl.influxdb.transformers.SportsEventIncidentReader;
-import com.trickl.influxdb.transformers.SportsEventIncidentTransformer;
 import com.trickl.model.event.AggregatedInstrumentEvents;
 import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.event.sports.SportsEventIncidentCategoryType;
@@ -37,7 +37,7 @@ public class SportsEventIncidentClient {
    * @return number of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<SportsEventIncident> events) {
-    SportsEventIncidentTransformer transformer = new SportsEventIncidentTransformer(priceSource);
+    SportsEventIncidentWriter transformer = new SportsEventIncidentWriter(priceSource);
     List<SportsEventIncidentEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(

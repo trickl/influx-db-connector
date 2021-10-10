@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.BidOrAskFlags;
 import com.trickl.influxdb.persistence.OrderEntity;
@@ -22,8 +22,8 @@ public class OrderReader implements Function<OrderEntity, Order> {
                 .volume(volume)
                 .source(
                     PriceSource.builder()
-                        .exchangeId(orderEntity.getExchangeId())
-                        .instrumentId(orderEntity.getInstrumentId())
+                        .exchangeId(orderEntity.getExchangeId().toUpperCase())
+                        .instrumentId(orderEntity.getInstrumentId().toUpperCase())
                         .build())
                 .build())
         .isBid(orderEntity.getBidOrAsk().equals(BidOrAskFlags.BID))

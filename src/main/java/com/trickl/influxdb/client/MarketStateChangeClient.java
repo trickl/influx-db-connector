@@ -1,8 +1,8 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.binding.MarketStateChangeReader;
+import com.trickl.influxdb.binding.MarketStateChangeWriter;
 import com.trickl.influxdb.persistence.MarketStateChangeEntity;
-import com.trickl.influxdb.transformers.MarketStateChangeReader;
-import com.trickl.influxdb.transformers.MarketStateChangeTransformer;
 import com.trickl.model.event.MarketStateChange;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
@@ -28,7 +28,7 @@ public class MarketStateChangeClient {
    * @return counts of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<MarketStateChange> events) {
-    MarketStateChangeTransformer transformer = new MarketStateChangeTransformer(priceSource);
+    MarketStateChangeWriter transformer = new MarketStateChangeWriter(priceSource);
     List<MarketStateChangeEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(

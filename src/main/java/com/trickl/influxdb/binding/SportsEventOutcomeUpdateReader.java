@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.SportsEventOutcomeUpdateEntity;
 import com.trickl.model.event.EventOutcomeType;

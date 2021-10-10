@@ -1,4 +1,4 @@
-package com.trickl.influxdb.transformers;
+package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.SportsEventScoreUpdateEntity;
 import com.trickl.model.event.sports.SportsEventScoreUpdate;
@@ -26,6 +26,13 @@ public class SportsEventScoreUpdateReader
                 .game(parseScoreString(instrumentEventEntity.getGame()))
                 .setOne(parseScoreString(instrumentEventEntity.getSetOne()))
                 .setTwo(parseScoreString(instrumentEventEntity.getSetTwo()))
+                .setThree(parseScoreString(instrumentEventEntity.getSetThree()))
+                .setFour(parseScoreString(instrumentEventEntity.getSetFour()))
+                .setFive(parseScoreString(instrumentEventEntity.getSetFive()))
+                .quarterOne(parseScoreString(instrumentEventEntity.getQuarterOne()))
+                .quarterTwo(parseScoreString(instrumentEventEntity.getQuarterTwo()))
+                .quarterThree(parseScoreString(instrumentEventEntity.getQuarterThree()))
+                .quarterFour(parseScoreString(instrumentEventEntity.getQuarterFour()))
                 .tiebreakOne(parseScoreString(instrumentEventEntity.getTieBreakOne()))
                 .tiebreakTwo(parseScoreString(instrumentEventEntity.getTieBreakTwo()))
                 .build())
