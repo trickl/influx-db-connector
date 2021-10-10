@@ -80,7 +80,7 @@ public class SportsEventScoreUpdateClient {
             queryBetween,
             eventSource.getEventType(),
             AggregatedSportsEventScoreUpdateEntity.class,
-            Optional.empty())
+            Optional.empty(), Optional.empty())
         .map(reader);
   }
 

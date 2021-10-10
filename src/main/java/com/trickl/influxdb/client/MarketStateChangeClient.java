@@ -52,7 +52,7 @@ public class MarketStateChangeClient {
             MarketStateChangeEntity.class,
             eventSource.getEventSubType() != null
                 ? Optional.of(Pair.of("state", Set.of(eventSource.getEventSubType())))
-                : Optional.empty())
+                : Optional.empty(), Optional.empty())
         .map(reader);
   }
 

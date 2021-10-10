@@ -113,7 +113,8 @@ public class InfluxDbAdapter {
   }
 
   /**
-   * Find measurements in the database.   
+   * Find measurements in the database.
+   *
    * @param <T> the type of measurement
    * @param priceSource The price source for the measurements
    * @param queryBetween Query parameters
@@ -127,7 +128,11 @@ public class InfluxDbAdapter {
       String measurementName,
       Class<T> measurementClazz) {
     return findBetween(
-        priceSource, queryBetween, measurementName, measurementClazz, Optional.empty());
+        priceSource,
+        queryBetween,
+        measurementName,
+        measurementClazz,
+        Optional.empty());
   }
 
   /**
@@ -147,6 +152,34 @@ public class InfluxDbAdapter {
       String measurementName,
       Class<T> measurementClazz,
       Optional<Pair<String, Set<String>>> filter) {
+    return findBetween(
+        priceSource,
+        queryBetween,
+        measurementName,
+        measurementClazz,
+        filter,
+        Optional.empty());
+  }
+
+  /**
+   * Find measurements in the database.
+   *
+   * @param <T> the type of measurement
+   * @param priceSource The price source for the measurements
+   * @param queryBetween Query parameters
+   * @param measurementName The measurement name
+   * @param measurementClazz the time of measurement
+   * @param filter An optional filter for fields
+   * @param temporalSource An optional temporal source
+   * @return A list of measurements
+   */
+  public <T> Flux<T> findBetween(
+      PriceSource priceSource,
+      QueryBetween queryBetween,
+      String measurementName,
+      Class<T> measurementClazz,
+      Optional<Pair<String, Set<String>>> filter,
+      Optional<String> temporalSource) {
 
     String sortClause =
         MessageFormat.format(
@@ -160,12 +193,18 @@ public class InfluxDbAdapter {
     String additionalFilterClause =
         filter.isPresent() ? FluxStatementFilterBuilder.buildFrom(filter.get()) : "";
 
+    String additionalTemporalClause =
+        temporalSource.isPresent()
+            ? String.format("r.temporalSource == \"%s\" and ", temporalSource)
+            : "";
+
     String flux =
         MessageFormat.format(
             "from(bucket:\"{0}\")\n"
                 + "|> range(start: {4}, stop: {5})\n"
                 + "|> filter(fn: (r) => r._measurement == \"{1}\" and "
                 + "r.exchangeId == \"{2}\" and "
+                + "{9}"
                 + "r.instrumentId == \"{3}\")\n"
                 + "|> pivot (rowKey:[\"_time\", \"exchangeId\", \"instrumentId\"], "
                 + "columnKey: [\"_field\"], valueColumn: \"_value\")\n"
@@ -181,7 +220,8 @@ public class InfluxDbAdapter {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)),
             sortClause,
             limitClause,
-            additionalFilterClause);
+            additionalFilterClause,
+            additionalTemporalClause);
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
     return RxJava2Adapter.flowableToFlux(queryApi.query(flux, measurementClazz));

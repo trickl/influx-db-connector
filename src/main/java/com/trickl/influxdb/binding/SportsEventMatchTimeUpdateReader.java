@@ -21,7 +21,10 @@ public class SportsEventMatchTimeUpdateReader
         .build();
   }
 
-  /** Parse an optional duration string if present. */
+  /** Parse an optional duration string if present. 
+   * @param text Text to parse
+   * @return A Duration
+  */
   public static Duration parseDuration(String text) {
     if (text == null) {
       return null;
