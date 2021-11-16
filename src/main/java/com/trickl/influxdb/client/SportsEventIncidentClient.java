@@ -63,8 +63,8 @@ public class SportsEventIncidentClient {
             "sports_event_incident",
             SportsEventIncidentEntity.class,
             incidentTypes != null && !incidentTypes.isEmpty()
-                ? Optional.of(Pair.of("incidentType", incidentTypes))
-                : Optional.empty(), Optional.empty())
+                ? Collections.singletonMap("incidentType", incidentTypes)
+                : Collections.emptyMap())
         .map(reader);
   }
 
@@ -84,8 +84,7 @@ public class SportsEventIncidentClient {
             eventSource.getPriceSource(),
             queryBetween,
             eventSource.getEventSubType(),
-            AggregatedSportsEventIncidentEntity.class,
-            Optional.empty(), Optional.empty())
+            AggregatedSportsEventIncidentEntity.class)
         .map(reader);
   }
 

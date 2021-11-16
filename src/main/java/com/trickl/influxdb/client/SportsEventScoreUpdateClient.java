@@ -79,8 +79,7 @@ public class SportsEventScoreUpdateClient {
             eventSource.getPriceSource(),
             queryBetween,
             eventSource.getEventType(),
-            AggregatedSportsEventScoreUpdateEntity.class,
-            Optional.empty(), Optional.empty())
+            AggregatedSportsEventScoreUpdateEntity.class)
         .map(reader);
   }
 

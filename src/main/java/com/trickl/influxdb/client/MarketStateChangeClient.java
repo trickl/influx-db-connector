@@ -7,12 +7,11 @@ import com.trickl.model.event.MarketStateChange;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
 import reactor.core.publisher.Flux;
 
 @RequiredArgsConstructor
@@ -51,8 +50,8 @@ public class MarketStateChangeClient {
             "market_state_change",
             MarketStateChangeEntity.class,
             eventSource.getEventSubType() != null
-                ? Optional.of(Pair.of("state", Set.of(eventSource.getEventSubType())))
-                : Optional.empty(), Optional.empty())
+                ? Collections.singletonMap("state", Set.of(eventSource.getEventSubType()))
+                : Collections.emptyMap())
         .map(reader);
   }
 

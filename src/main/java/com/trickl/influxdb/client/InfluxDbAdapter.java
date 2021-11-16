@@ -14,6 +14,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalField;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import org.apache.commons.lang3.tuple.Pair;
 import reactor.adapter.rxjava.RxJava2Adapter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -131,8 +131,8 @@ public class InfluxDbAdapter {
         priceSource,
         queryBetween,
         measurementName,
-        measurementClazz,
-        Optional.empty());
+        measurementClazz,        
+        Collections.emptyMap());
   }
 
   /**
@@ -151,7 +151,7 @@ public class InfluxDbAdapter {
       QueryBetween queryBetween,
       String measurementName,
       Class<T> measurementClazz,
-      Optional<Pair<String, Set<String>>> filter) {
+      Map<String, Set<String>> filter) {
     return findBetween(
         priceSource,
         queryBetween,
@@ -178,7 +178,7 @@ public class InfluxDbAdapter {
       QueryBetween queryBetween,
       String measurementName,
       Class<T> measurementClazz,
-      Optional<Pair<String, Set<String>>> filter,
+      Map<String, Set<String>> filter,
       Optional<String> temporalSource) {
 
     String sortClause =
@@ -190,8 +190,7 @@ public class InfluxDbAdapter {
       limitClause = MessageFormat.format("|> limit(n: {0})\n", queryBetween.getLimit().toString());
     }
 
-    String additionalFilterClause =
-        filter.isPresent() ? FluxStatementFilterBuilder.buildFrom(filter.get()) : "";
+    String additionalFilterClause = FluxStatementFilterBuilder.buildFrom(filter);
 
     String additionalTemporalClause =
         temporalSource.isPresent()
@@ -267,10 +266,11 @@ public class InfluxDbAdapter {
                 + "   '}'))\n"
                 + "'}'\n"
                 + "\n"
-                + "fieldFirstLastDuration(measurement: \"{1}\", field: \"state\", start: {2},"
-                + " stop: {3})",
+                + "fieldFirstLastDuration(measurement: \"{1}\", field: \"{2}\", start: {3},"
+                + " stop: {4})",
             bucket,
             measurementName,
+            fieldName, 
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
             Rfc3339.YMDHMS_FORMATTER.format(

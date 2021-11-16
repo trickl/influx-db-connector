@@ -82,8 +82,7 @@ public class SportsEventMatchTimeUpdateClient {
             eventSource.getPriceSource(),
             queryBetween,
             eventSource.getEventType(),
-            AggregatedSportsEventMatchTimeUpdateEntity.class,
-            Optional.empty(), Optional.empty())
+            AggregatedSportsEventMatchTimeUpdateEntity.class)
         .map(reader);
   }
 

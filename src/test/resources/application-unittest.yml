@@ -1,6 +1,6 @@
 influx-db:
   url: http://localhost
-  token: <INFLUXDB_TOKEN>
+  token: ${INFLUXDB_TOKEN:token_unset}
 logging:
   level:
     com.trickl.influxdb: DEBUG

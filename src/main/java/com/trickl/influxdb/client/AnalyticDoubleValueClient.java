@@ -3,11 +3,16 @@ package com.trickl.influxdb.client;
 import com.trickl.influxdb.binding.AnalyticDoubleValueReader;
 import com.trickl.influxdb.binding.AnalyticDoubleValueWriter;
 import com.trickl.influxdb.persistence.AnalyticDoubleValueEntity;
+import com.trickl.model.analytics.AnalyticId;
 import com.trickl.model.analytics.InstantDouble;
 import com.trickl.model.pricing.primitives.TemporalPriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -20,14 +25,17 @@ public class AnalyticDoubleValueClient {
   /**
    * Stores analytics in the database.
    *
-   * @param temporalPriceSource the instrument identifier
-   * @param events data to store
+   * @param analyticId the analytic identifier
+   * @param temporalPriceSource the instrument and temporal source
+   * @param values data to store
    * @return counts of records stored
    */
-  public Flux<Integer> store(TemporalPriceSource temporalPriceSource, List<InstantDouble> events) {
-    AnalyticDoubleValueWriter transformer = new AnalyticDoubleValueWriter(temporalPriceSource);
+  public Flux<Integer> store(
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, List<InstantDouble> values) {
+    AnalyticDoubleValueWriter transformer =
+        new AnalyticDoubleValueWriter(analyticId, temporalPriceSource);
     List<AnalyticDoubleValueEntity> measurements =
-        events.stream().map(transformer).collect(Collectors.toList());
+        values.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
         measurements, AnalyticDoubleValueEntity.class, AnalyticDoubleValueEntity::getTime);
   }
@@ -35,20 +43,33 @@ public class AnalyticDoubleValueClient {
   /**
    * Find analytic values.
    *
-   * @param temporalPriceSource the aanlytic source
+   * @param analyticId the analytic identifier
+   * @param temporalPriceSource the analytic source
    * @param queryBetween Query parameters
    * @return A list of bars
    */
   public Flux<InstantDouble> findBetween(
-      TemporalPriceSource temporalPriceSource, QueryBetween queryBetween) {
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, QueryBetween queryBetween) {
     AnalyticDoubleValueReader reader = new AnalyticDoubleValueReader();
+    Map<String, Set<String>> analyticSpec =
+        new HashMap<String, Set<String>>() {
+          {
+            put("domain", Collections.singleton(analyticId.getDomain()));
+            put("analyticName", Collections.singleton(analyticId.getName()));
+          }
+        };
+
+    if (analyticId.getParameters() != null && analyticId.getParameters() != "") {
+      analyticSpec.put("parameters", Collections.singleton(analyticId.getParameters()));
+    }
+
     return influxDbClient
         .findBetween(
             temporalPriceSource.getPriceSource(),
             queryBetween,
             "analytic_double_value",
             AnalyticDoubleValueEntity.class,
-            Optional.empty(),
+            Collections.unmodifiableMap(analyticSpec),
             Optional.of(temporalPriceSource.getTemporalSource()))
         .map(reader);
   }

@@ -33,6 +33,18 @@ public class AnalyticDoubleValueEntity {
   @Column(name = "temporalSource", tag = true)
   private String temporalSource;
 
+  @NotNull
+  @Column(name = "domain", tag = true)
+  private String domain;
+
+  @NotNull
+  @Column(name = "analyticName", tag = true)
+  private String analyticName;
+
+  @NotNull
+  @Column(name = "parameters", tag = true)
+  private String parameters;
+
   @Column(name = "value")
   private Double value;
 }
