@@ -222,7 +222,12 @@ public class InstrumentEventClient {
     return first.getTime().compareTo(second.getTime());
   }
 
-  private boolean isAggregateName(String name) {
+  /**
+   * Test if a name is an aggregate (i.e. ends in a duration).
+   * @param name The name to test
+   * @return true or false
+   */
+  public boolean isAggregateName(String name) {
     String[] nameParts = name.split("_");
     String lastPart = nameParts[nameParts.length - 1];
     Duration duration = InfluxDbDurationParser.tryParse(lastPart);
