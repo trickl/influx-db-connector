@@ -10,6 +10,7 @@ import com.trickl.model.event.sports.SportsEventScoreUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +33,7 @@ public class SportsEventScoreUpdateClient {
    * @return the number of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<SportsEventScoreUpdate> events) {
-    SportsEventScoreUpdateWriter transformer =
-        new SportsEventScoreUpdateWriter(priceSource);
+    SportsEventScoreUpdateWriter transformer = new SportsEventScoreUpdateWriter(priceSource);
     List<SportsEventScoreUpdateEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
     return influxDbClient.store(
@@ -94,7 +94,11 @@ public class SportsEventScoreUpdateClient {
   public Flux<AggregatedInstrumentEvents> aggregateBetween(
       EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
     AggregatedSportsEventScoreUpdateReader reader = new AggregatedSportsEventScoreUpdateReader();
-    String measurementName = eventSource.getEventType();    
+    String measurementName =
+        MessageFormat.format(
+            "{0}_{1}",
+            eventSource.getEventType(), aggregateEventWidth.toString().substring(3).toLowerCase());
+
     return influxDbAggregator
         .aggregateSportsEventScoreUpdatesBetween(
             eventSource.getPriceSource(),

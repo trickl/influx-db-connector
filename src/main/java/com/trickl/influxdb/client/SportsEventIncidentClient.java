@@ -12,6 +12,7 @@ import com.trickl.model.event.sports.SportsEventIncidentType;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +56,7 @@ public class SportsEventIncidentClient {
     SportsEventIncidentReader reader = new SportsEventIncidentReader();
 
     Set<String> incidentTypes = getIncidentTypes(eventSource);
-    
+
     return influxDbClient
         .findBetween(
             eventSource.getPriceSource(),
@@ -99,7 +100,11 @@ public class SportsEventIncidentClient {
   public Flux<AggregatedInstrumentEvents> aggregateBetween(
       EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
     AggregatedSportsEventIncidentReader reader = new AggregatedSportsEventIncidentReader();
-    String measurementName = eventSource.getEventSubType();
+    String measurementName =
+        MessageFormat.format(
+            "{0}_{1}",
+            eventSource.getEventSubType(),
+            aggregateEventWidth.toString().substring(3).toLowerCase());
     Set<String> incidentTypes = getIncidentTypes(eventSource);
     return influxDbAggregator
         .aggregateSportsEventIncidentsBetween(

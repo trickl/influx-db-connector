@@ -10,6 +10,7 @@ import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -98,7 +99,10 @@ public class SportsEventMatchTimeUpdateClient {
       EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
     AggregatedSportsEventMatchTimeUpdateReader reader =
         new AggregatedSportsEventMatchTimeUpdateReader();
-    String measurementName = eventSource.getEventType();
+    String measurementName =
+        MessageFormat.format(
+            "{0}_{1}",
+            eventSource.getEventType(), aggregateEventWidth.toString().substring(3).toLowerCase());
     return influxDbAggregator
         .aggregateSportsEventMatchTimeUpdatesBetween(
             eventSource.getPriceSource(),
