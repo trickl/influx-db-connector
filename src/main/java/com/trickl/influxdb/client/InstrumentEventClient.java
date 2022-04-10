@@ -110,11 +110,9 @@ public class InstrumentEventClient {
             Optional.ofNullable(eventSource.getEventSubType()).orElse(eventSource.getEventType()));
 
     String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
-    String[] eventTypeParts = eventTypeLowerCase.split("_");
-    String eventTypeBase = eventTypeParts[0];
 
     if (!isAggregate) {
-      switch (eventTypeBase) {
+      switch (eventTypeLowerCase) {
         case "market":
           return marketStateChangeClient
               .findBetween(eventSource, queryBetween)
@@ -145,6 +143,11 @@ public class InstrumentEventClient {
                   "EventType: " + eventSource.getEventType() + " not supported."));
       }
     } else {
+      int lastUnderscoreIndex = eventTypeLowerCase.lastIndexOf('_');
+      String eventTypeBase =
+          eventTypeLowerCase.substring(
+              0, lastUnderscoreIndex > 0 ? lastUnderscoreIndex : eventTypeLowerCase.length());
+
       switch (eventTypeBase) {
         case "incident":
           return sportsEventIncidentClient
@@ -224,6 +227,7 @@ public class InstrumentEventClient {
 
   /**
    * Test if a name is an aggregate (i.e. ends in a duration).
+   *
    * @param name The name to test
    * @return true or false
    */
