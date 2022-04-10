@@ -113,10 +113,12 @@ public class SportsEventMatchTimeUpdateClient {
    * Find a summary of outcome updates between a period of time, grouped by instrument.
    *
    * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "sports_event_match_time_update", "remaining_time");
+        queryBetween, "sports_event_match_time_update", "remaining_time", priceSource);
   }
 }

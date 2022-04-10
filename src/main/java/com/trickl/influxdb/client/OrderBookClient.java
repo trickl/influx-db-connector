@@ -7,6 +7,7 @@ import com.trickl.model.pricing.primitives.Quote;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -87,10 +88,12 @@ public class OrderBookClient {
   /**
    * Find all available series that overlap a time window.
    *
-   * @param window A time window there series must have a data point within
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
    * @return A list of series
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween window) {
-    return orderClient.findSummary(window);
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
+    return orderClient.findSummary(queryBetween, priceSource);
   }
 }

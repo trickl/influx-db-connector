@@ -9,6 +9,7 @@ import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -108,11 +109,12 @@ public class CandleClient {
    *
    * @param queryBetween A time window there series must have a data point within
    * @param candleName Candle name
+   * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, String candleName) {
+      QueryBetween queryBetween, String candleName, Optional<PriceSource> priceSource) {
     return influxDbAdapter.findFieldFirstLastCountByDay(
-        queryBetween, candleName, "close");
+        queryBetween, candleName, "close", priceSource);
   }
 }

@@ -191,10 +191,8 @@ public class InstrumentEventClient {
     }
 
     String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
-    String[] eventTypeParts = eventTypeLowerCase.split("_");
-    String eventTypeBase = eventTypeParts[0];
 
-    switch (eventTypeBase) {
+    switch (eventTypeLowerCase) {
       case "market":
         return Flux.empty();
       case "incident":

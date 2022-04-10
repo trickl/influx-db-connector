@@ -5,6 +5,7 @@ import com.trickl.influxdb.binding.AnalyticDoubleValueWriter;
 import com.trickl.influxdb.persistence.AnalyticDoubleValueEntity;
 import com.trickl.model.analytics.AnalyticId;
 import com.trickl.model.analytics.InstantDouble;
+import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.TemporalPriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.util.Collections;
@@ -78,10 +79,12 @@ public class AnalyticDoubleValueClient {
    * Find a summary of changes between a period of time, grouped by instrument.
    *
    * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "analytic_double_value", "time");
+        queryBetween, "analytic_double_value", "time", priceSource);
   }
 }

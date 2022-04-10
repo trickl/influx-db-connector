@@ -8,6 +8,7 @@ import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -60,10 +61,12 @@ public class SportsEventPeriodUpdateClient {
    * Find a summary of outcome updates between a period of time, grouped by instrument.
    *
    * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(QueryBetween queryBetween) {
+  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
     return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "sports_event_period_update", "period");
+        queryBetween, "sports_event_period_update", "period", priceSource);
   }
 }
