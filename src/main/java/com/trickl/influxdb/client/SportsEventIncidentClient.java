@@ -104,7 +104,7 @@ public class SportsEventIncidentClient {
         MessageFormat.format(
             "{0}_{1}",
             eventSource.getEventSubType(),
-            aggregateEventWidth.toString().substring(3).toLowerCase());
+            aggregateEventWidth.toString().substring(2).toLowerCase());
     Set<String> incidentTypes = getIncidentTypes(eventSource);
     return influxDbAggregator
         .aggregateSportsEventIncidentsBetween(

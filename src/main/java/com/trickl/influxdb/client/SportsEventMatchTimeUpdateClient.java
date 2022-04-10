@@ -102,7 +102,7 @@ public class SportsEventMatchTimeUpdateClient {
     String measurementName =
         MessageFormat.format(
             "{0}_{1}",
-            eventSource.getEventType(), aggregateEventWidth.toString().substring(3).toLowerCase());
+            eventSource.getEventType(), aggregateEventWidth.toString().substring(2).toLowerCase());
     return influxDbAggregator
         .aggregateSportsEventMatchTimeUpdatesBetween(
             eventSource.getPriceSource(),
