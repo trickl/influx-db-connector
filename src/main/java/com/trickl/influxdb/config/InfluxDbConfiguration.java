@@ -2,7 +2,7 @@ package com.trickl.influxdb.config;
 
 import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.influxdb.client.reactive.InfluxDBClientReactiveFactory;
-import com.trickl.influxdb.client.AnalyticDoubleValueClient;
+import com.trickl.influxdb.client.AnalyticPrimitiveValueClient;
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
 import com.trickl.influxdb.client.InfluxDbAdapter;
@@ -99,8 +99,8 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
-  AnalyticDoubleValueClient influxDbAnalyticDoubleValueClient() {
-    return new AnalyticDoubleValueClient(influxDbAdapter());
+  AnalyticPrimitiveValueClient influxDbAnalyticPrimitiveValueClient() {
+    return new AnalyticPrimitiveValueClient(influxDbAdapter());
   }
 
   @Bean

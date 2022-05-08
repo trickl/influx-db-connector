@@ -6,12 +6,12 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-@Measurement(name = "analytic_double_value")
+@Measurement(name = "analytic_boolean_value")
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class AnalyticDoubleValueEntity extends AnalyticPrimitiveValueEntity<Double> {
+public class AnalyticBooleanValueEntity extends AnalyticPrimitiveValueEntity<Boolean> {
   @Builder
-  public AnalyticDoubleValueEntity(
+  public AnalyticBooleanValueEntity(
       Instant time,
       String instrumentId,
       String exchangeId,
@@ -19,7 +19,7 @@ public class AnalyticDoubleValueEntity extends AnalyticPrimitiveValueEntity<Doub
       String domain,
       String analyticName,
       String parameters,
-      double value) {
+      boolean value) {
     super(time, instrumentId, exchangeId, temporalSource, domain, analyticName, parameters, value);
   }
 }
