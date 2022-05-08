@@ -2,12 +2,10 @@ package com.trickl.influxdb.persistence;
 
 import com.influxdb.annotations.Measurement;
 import java.time.Instant;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 @Measurement(name = "analytic_integer_value")
-@Builder
 @NoArgsConstructor
 public class AnalyticIntegerValueEntity extends AnalyticPrimitiveValueEntity<Integer> {
   @Builder
