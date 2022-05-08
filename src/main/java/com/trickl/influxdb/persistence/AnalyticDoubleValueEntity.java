@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Measurement(name = "analytic_double_value")
 @Builder
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 public class AnalyticDoubleValueEntity extends AnalyticPrimitiveValueEntity<Double> {
   @Builder
   public AnalyticDoubleValueEntity(

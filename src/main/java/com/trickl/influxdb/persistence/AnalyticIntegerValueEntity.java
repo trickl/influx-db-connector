@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Measurement(name = "analytic_integer_value")
 @Builder
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 public class AnalyticIntegerValueEntity extends AnalyticPrimitiveValueEntity<Integer> {
   @Builder
   public AnalyticIntegerValueEntity(

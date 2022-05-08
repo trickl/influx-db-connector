@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Measurement(name = "analytic_boolean_value")
 @Builder
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 public class AnalyticBooleanValueEntity extends AnalyticPrimitiveValueEntity<Boolean> {
   @Builder
   public AnalyticBooleanValueEntity(
