@@ -1,13 +1,18 @@
 package com.trickl.influxdb.persistence;
 
+import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
 import java.time.Instant;
 import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Measurement(name = "analytic_string_value")
 @NoArgsConstructor
-public class AnalyticStringValueEntity extends AnalyticPrimitiveValueEntity<String> {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class AnalyticStringValueEntity extends AnalyticPrimitiveValueEntity {
   @Builder
   public AnalyticStringValueEntity(
       Instant time,
@@ -18,6 +23,10 @@ public class AnalyticStringValueEntity extends AnalyticPrimitiveValueEntity<Stri
       String analyticName,
       String parameters,
       String value) {
-    super(time, instrumentId, exchangeId, temporalSource, domain, analyticName, parameters, value);
+    super(time, instrumentId, exchangeId, temporalSource, domain, analyticName, parameters);
+    this.value = value;
   }
+
+  @Column(name = "value")
+  private String value;
 }

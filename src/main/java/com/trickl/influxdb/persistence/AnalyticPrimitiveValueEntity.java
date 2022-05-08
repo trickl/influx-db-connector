@@ -13,7 +13,7 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString
-public class AnalyticPrimitiveValueEntity<T> {
+public class AnalyticPrimitiveValueEntity {
   @NotNull
   @Column(name = "time", timestamp = true)
   private Instant time;
@@ -41,7 +41,4 @@ public class AnalyticPrimitiveValueEntity<T> {
   @NotNull
   @Column(name = "parameters", tag = true)
   private String parameters;
-
-  @Column(name = "value")
-  private T value;
 }
