@@ -11,7 +11,7 @@ public class AnalyticIntegerValueReader
   public InstantInteger apply(AnalyticIntegerValueEntity analyticIntegerValueEntity) {
     return InstantInteger.builder()
         .time(analyticIntegerValueEntity.getTime())
-        .value(analyticIntegerValueEntity.getValue())
+        .value(Integer.parseInt(analyticIntegerValueEntity.getValue().toString()))
         .build();
   }
 }
