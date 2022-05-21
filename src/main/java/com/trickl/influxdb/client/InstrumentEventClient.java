@@ -1,6 +1,7 @@
 package com.trickl.influxdb.client;
 
 import com.trickl.model.event.InstrumentEvent;
+import com.trickl.model.event.InstrumentEventType;
 import com.trickl.model.event.MarketStateChange;
 import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
@@ -105,35 +106,38 @@ public class InstrumentEventClient {
           .sort(InstrumentEventClient::compareEventTimes);
     }
 
-    boolean isAggregate =
-        isAggregateName(
-            Optional.ofNullable(eventSource.getEventSubType()).orElse(eventSource.getEventType()));
+    InstrumentEventType instrumentEventType;
+    try {
+      instrumentEventType = InstrumentEventType.fromShortName(eventSource.getEventType());
+    } catch (IllegalArgumentException ex) {
+      return Flux.error(
+          new NoSuchMeasurementTypeException(
+              "EventType: " + eventSource.getEventType() + " not supported."));
+    }
 
-    String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
-
-    if (!isAggregate) {
-      switch (eventTypeLowerCase) {
-        case "market":
+    if (instrumentEventType != InstrumentEventType.AGGREGATED) {
+      switch (instrumentEventType) {
+        case MARKET_STATE_CHANGE:
           return marketStateChangeClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "incident":
+        case SPORTS_EVENT_INCIDENT:
           return sportsEventIncidentClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "outcome":
+        case SPORTS_EVENT_OUTCOME_CHANGE:
           return sportsEventOutcomeUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "score":
+        case SPORTS_EVENT_SCORE_UPDATE:
           return sportsEventScoreUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "period":
+        case SPORTS_EVENT_PERIOD_UPDATE:
           return sportsEventPeriodUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "match_time":
+        case SPORTS_EVENT_MATCH_TIME_UPDATE:
           return sportsEventMatchTimeUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
@@ -143,31 +147,42 @@ public class InstrumentEventClient {
                   "EventType: " + eventSource.getEventType() + " not supported."));
       }
     } else {
+      String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
+
       int lastUnderscoreIndex = eventTypeLowerCase.lastIndexOf('_');
       String eventTypeBase =
           eventTypeLowerCase.substring(
               0, lastUnderscoreIndex > 0 ? lastUnderscoreIndex : eventTypeLowerCase.length());
 
-      switch (eventTypeBase) {
-        case "incident":
+      InstrumentEventType aggregatedEventType;
+      try {
+        aggregatedEventType = InstrumentEventType.fromShortName(eventTypeBase);
+      } catch (IllegalArgumentException ex) {
+        return Flux.error(
+            new NoSuchMeasurementTypeException(
+                "EventType: " + eventSource.getEventType() + " not supported."));
+      }
+      
+      switch (aggregatedEventType) {
+        case SPORTS_EVENT_INCIDENT:
           return sportsEventIncidentClient
               .findAggregatedBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "score":
+        case SPORTS_EVENT_SCORE_UPDATE:
           return sportsEventScoreUpdateClient
               .findAggregatedBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "match_time":
+        case SPORTS_EVENT_MATCH_TIME_UPDATE:
           return sportsEventMatchTimeUpdateClient
               .findAggregatedBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
-        case "outcome":
+        case SPORTS_EVENT_OUTCOME_CHANGE:
           return Flux.error(
               new NoSuchMeasurementTypeException("Aggregate outcome events not supported."));
-        case "period":
+        case SPORTS_EVENT_PERIOD_UPDATE:
           return Flux.error(
               new NoSuchMeasurementTypeException("Aggregate period events not supported."));
-        case "market":
+        case MARKET_STATE_CHANGE:
           return Flux.error(
               new NoSuchMeasurementTypeException("Aggregate market events not supported."));
         default:
