@@ -18,7 +18,7 @@ public class OrderClient {
   private final InfluxDbAdapter influxDbClient;
 
   /**
-   * Stores prices in the database.
+   * Stores quotes in the database.
    *
    * @param priceSource the instrument identifier
    * @param orders data to store
