@@ -45,6 +45,7 @@ public class BrokerOrderClient {
    *
    * @param temporalPriceSource the instrument identifier
    * @param queryBetween Query parameters
+   * @param orderStateFilter Types of orders
    * @return A list of bars
    */
   public Flux<Order> findBetween(

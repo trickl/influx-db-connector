@@ -235,7 +235,7 @@ public class InfluxDbAdapter {
     String filter =
         MessageFormat.format(
             "|> filter(fn: (r) => r._measurement == measurement and r._field == field"
-                + " and r.exchangeId = \"{0}\" and r.instrumentId = \"{1}\")\n",
+                + " and r.exchangeId == \"{0}\" and r.instrumentId == \"{1}\")\n",
             priceSource.getExchangeId(), priceSource.getInstrumentId());
 
     String flux =
