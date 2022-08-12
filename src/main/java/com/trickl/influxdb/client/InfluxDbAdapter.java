@@ -250,7 +250,7 @@ public class InfluxDbAdapter {
                 + "\n"
                 + "  lastValue = from(bucket:\"{0}\")\n"
                 + "    |> range(start: start, stop: stop)\n"
-                + "    |> filter(fn: (r) => r._measurement == measurement and r._field == field)\n"
+                + "    {1}"
                 + "    |> group(columns: [\"instrumentId\", \"exchangeId\"])\n"
                 + "    |> last()\n"
                 + "    |> toString()\n"
