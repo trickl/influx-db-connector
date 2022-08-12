@@ -113,7 +113,7 @@ public class CandleClient {
    * @return A list of series, including the first and last value of a field
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, String candleName, Optional<PriceSource> priceSource) {
+      QueryBetween queryBetween, String candleName, PriceSource priceSource) {
     return influxDbAdapter.findFieldFirstLastCountByDay(
         queryBetween, candleName, "close", priceSource);
   }

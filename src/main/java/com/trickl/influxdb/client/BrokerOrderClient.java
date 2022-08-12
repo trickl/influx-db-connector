@@ -96,7 +96,7 @@ public class BrokerOrderClient {
    * @return A list of series, including the first and last value of a field
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
+      QueryBetween queryBetween, PriceSource priceSource) {
     return influxDbClient.findFieldFirstLastCountByDay(
         queryBetween, "broker_order", "price", priceSource);
   }

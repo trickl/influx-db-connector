@@ -2,6 +2,7 @@ package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.BidOrAskFlags;
 import com.trickl.influxdb.persistence.BrokerOrderEntity;
+import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.broker.orders.LongShort;
 import com.trickl.model.broker.orders.Order;
 import com.trickl.model.pricing.primitives.TemporalPriceSource;
@@ -25,13 +26,17 @@ public class BrokerOrderWriter implements Function<Order, BrokerOrderEntity> {
         .price(Optional.ofNullable(order.getPrice()).map(BigDecimal::doubleValue).orElse(null))
         .volume(order.getQuantity().longValue())
         .bidOrAsk(order.getLongShort() == LongShort.Long ? BidOrAskFlags.BID : BidOrAskFlags.ASK)
-        .createdAtTime(order.getCreatedAtTime())
-        .quantityUnfilled(order.getQuantityUnfilled().longValue())
-        .quantityFilled(order.getQuantityFilled().longValue())
+        .createdAtTime(Rfc3339.YMDHMSM_FORMATTER.format(order.getCreatedAtTime()))
+        .quantityUnfilled(
+            Optional.ofNullable(order.getQuantityUnfilled())
+                .map(BigDecimal::longValue)
+                .orElse(null))
+        .quantityFilled(
+            Optional.ofNullable(order.getQuantityFilled()).map(BigDecimal::longValue).orElse(null))
         .brokerId(order.getId())
         .clientReference(order.getClientReference())
-        .timeInForce(order.getTimeInForce().toString())
-        .type(order.getType().toString())
+        .timeInForce(Optional.ofNullable(order.getTimeInForce()).map(Object::toString).orElse(null))
+        .type(Optional.ofNullable(order.getType()).map(Object::toString).orElse(null))
         .reason(order.getReason())
         .state(order.getState().toString())
         .build();

@@ -47,8 +47,8 @@ public class BrokerOrderEntity {
   protected Long volume;
 
   @NotNull
-  @Column(name = "createdAtTime", timestamp = true)
-  private Instant createdAtTime;
+  @Column(name = "createdAtTime")
+  private String createdAtTime;
 
   @Min(0)
   @Column(name = "quantityUnfilled")

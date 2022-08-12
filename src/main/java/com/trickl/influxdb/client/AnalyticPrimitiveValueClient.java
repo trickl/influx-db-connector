@@ -239,7 +239,7 @@ public class AnalyticPrimitiveValueClient {
    * @return A list of series, including the first and last value of a field
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
+      QueryBetween queryBetween, PriceSource priceSource) {
     return Flux.concat(
         Stream.of(
                 "analytic_double_value",

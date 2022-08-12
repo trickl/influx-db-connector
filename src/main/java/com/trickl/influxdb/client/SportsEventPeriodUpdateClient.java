@@ -65,7 +65,7 @@ public class SportsEventPeriodUpdateClient {
    * @return A list of series, including the first and last value of a field
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
+      QueryBetween queryBetween, PriceSource priceSource) {
     return influxDbClient.findFieldFirstLastCountByDay(
         queryBetween, "sports_event_period_update", "period", priceSource);
   }

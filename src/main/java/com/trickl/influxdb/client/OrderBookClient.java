@@ -93,7 +93,7 @@ public class OrderBookClient {
    * @return A list of series
    */
   public Flux<PriceSourceFieldFirstLastDuration> findSummary(
-      QueryBetween queryBetween, Optional<PriceSource> priceSource) {
+      QueryBetween queryBetween, PriceSource priceSource) {
     return orderClient.findSummary(queryBetween, priceSource);
   }
 }

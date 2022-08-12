@@ -128,11 +128,7 @@ public class InfluxDbAdapter {
       String measurementName,
       Class<T> measurementClazz) {
     return findBetween(
-        priceSource,
-        queryBetween,
-        measurementName,
-        measurementClazz,        
-        Collections.emptyMap());
+        priceSource, queryBetween, measurementName, measurementClazz, Collections.emptyMap());
   }
 
   /**
@@ -153,12 +149,7 @@ public class InfluxDbAdapter {
       Class<T> measurementClazz,
       Map<String, Set<String>> filter) {
     return findBetween(
-        priceSource,
-        queryBetween,
-        measurementName,
-        measurementClazz,
-        filter,
-        Optional.empty());
+        priceSource, queryBetween, measurementName, measurementClazz, filter, Optional.empty());
   }
 
   /**
@@ -236,18 +227,16 @@ public class InfluxDbAdapter {
    * @return A list of series
    */
   public Flux<PriceSourceFieldFirstLastDuration> findFieldFirstLastCountByDay(
-      QueryBetween queryBetween, 
+      QueryBetween queryBetween,
       String measurementName,
       String fieldName,
-      Optional<PriceSource> priceSource) {
+      PriceSource priceSource) {
 
-    String filter = "|> filter(fn: (r) => r._measurement == measurement and r._field == field)\n";
-    if (priceSource.isPresent()) {
-      filter = MessageFormat.format(
-        "|> filter(fn: (r) => r._measurement == measurement and r._field == field"
-        + " and r.exchangeId = \"{0}\" and r.instrumentId = \"{1}\")\n",
-        priceSource.get().getExchangeId(), priceSource.get().getInstrumentId());
-    }
+    String filter =
+        MessageFormat.format(
+            "|> filter(fn: (r) => r._measurement == measurement and r._field == field"
+                + " and r.exchangeId = \"{0}\" and r.instrumentId = \"{1}\")\n",
+            priceSource.getExchangeId(), priceSource.getInstrumentId());
 
     String flux =
         MessageFormat.format(
@@ -285,7 +274,7 @@ public class InfluxDbAdapter {
             bucket,
             filter,
             measurementName,
-            fieldName, 
+            fieldName,
             Rfc3339.YMDHMS_FORMATTER.format(
                 ZonedDateTime.ofInstant(queryBetween.getStart(), ZoneOffset.UTC)),
             Rfc3339.YMDHMS_FORMATTER.format(

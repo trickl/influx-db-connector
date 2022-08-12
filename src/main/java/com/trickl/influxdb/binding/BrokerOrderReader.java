@@ -2,12 +2,14 @@ package com.trickl.influxdb.binding;
 
 import com.trickl.influxdb.persistence.BidOrAskFlags;
 import com.trickl.influxdb.persistence.BrokerOrderEntity;
+import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.broker.orders.LongShort;
 import com.trickl.model.broker.orders.Order;
 import com.trickl.model.broker.orders.OrderState;
 import com.trickl.model.broker.orders.OrderType;
 import com.trickl.model.broker.orders.TimeInForce;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -28,13 +30,17 @@ public class BrokerOrderReader implements Function<BrokerOrderEntity, Order> {
         .longShort(
             orderEntity.getBidOrAsk().equals(BidOrAskFlags.BID) ? LongShort.Long : LongShort.Short)
         .lastModifiedTime(orderEntity.getTime())
-        .createdAtTime(orderEntity.getCreatedAtTime())
+        .createdAtTime(
+            Rfc3339.YMDHMSM_FORMATTER.parse(orderEntity.getCreatedAtTime(), Instant::from))
         .quantityUnfilled(BigDecimal.valueOf(quantityUnfilled))
         .quantityFilled(BigDecimal.valueOf(quantityFilled))
         .id(orderEntity.getBrokerId())
         .clientReference(orderEntity.getClientReference())
-        .timeInForce(TimeInForce.valueOf(orderEntity.getTimeInForce()))
-        .type(OrderType.valueOf(orderEntity.getType()))
+        .timeInForce(
+            Optional.ofNullable(orderEntity.getTimeInForce())
+                .map(TimeInForce::valueOf)
+                .orElse(null))
+        .type(Optional.ofNullable(orderEntity.getType()).map(OrderType::valueOf).orElse(null))
         .reason(orderEntity.getReason())
         .state(OrderState.valueOf(orderEntity.getState()))
         .build();
