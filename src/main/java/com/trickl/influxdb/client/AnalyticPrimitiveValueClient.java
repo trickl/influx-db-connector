@@ -138,7 +138,7 @@ public class AnalyticPrimitiveValueClient {
           }
         };
 
-    if (analyticId.getParameters() != null && analyticId.getParameters() != "") {
+    if (analyticId.getParameters() != null && analyticId.getParameters().length() > 0) {
       analyticSpec.put("parameters", Collections.singleton(analyticId.getParameters()));
     }
 
