@@ -24,7 +24,7 @@ public class BrokerOrderWriter implements Function<Order, BrokerOrderEntity> {
         .exchangeId(temporalPriceSource.getPriceSource().getExchangeId().toUpperCase())
         .simulationId(temporalPriceSource.getTemporalSource())
         .price(Optional.ofNullable(order.getPrice()).map(BigDecimal::doubleValue).orElse(null))
-        .volume(order.getQuantity().longValue())
+        .volume(Optional.ofNullable(order.getQuantity()).map(BigDecimal::longValue).orElse(null))
         .bidOrAsk(order.getLongShort() == LongShort.Long ? BidOrAskFlags.BID : BidOrAskFlags.ASK)
         .createdAtTime(Rfc3339.YMDHMSM_FORMATTER.format(order.getCreatedAtTime()))
         .quantityUnfilled(

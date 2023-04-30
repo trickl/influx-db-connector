@@ -20,7 +20,7 @@ public class CandleClientTest {
   private CandleClient candleClient;
 
   @AfterEach
-  private void shutdown() throws IOException {}
+  public void shutdown() throws IOException {}
 
   @Test
   public void testFindByIds() throws IOException {

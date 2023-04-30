@@ -21,10 +21,10 @@ public class OrderBookClientTest {
   private OrderBookClient orderBookClient;
 
   @BeforeEach
-  private void setup() {}
+  public void setup() {}
 
   @AfterEach
-  private void shutdown() throws IOException {}
+  public void shutdown() throws IOException {}
 
   @Test
   public void testFindByIds() throws IOException {}

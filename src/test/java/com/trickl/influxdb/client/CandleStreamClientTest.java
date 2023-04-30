@@ -21,10 +21,10 @@ public class CandleStreamClientTest {
   private CandleStreamClient candleStreamClient;
 
   @BeforeEach
-  private void setup() {}
+  public void setup() {}
 
   @AfterEach
-  private void shutdown() throws IOException, InterruptedException {}
+  public void shutdown() throws IOException, InterruptedException {}
 
   @Test
   public void testGet() throws IOException, InterruptedException {}
