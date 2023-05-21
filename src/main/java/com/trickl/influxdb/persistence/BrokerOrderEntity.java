@@ -2,9 +2,9 @@ package com.trickl.influxdb.persistence;
 
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,7 +53,7 @@ public class BrokerOrderEntity {
   @Min(0)
   @Column(name = "quantityUnfilled")
   protected Long quantityUnfilled;
-     
+
   @Min(0)
   @Column(name = "quantityFilled")
   protected Long quantityFilled;
@@ -73,7 +73,7 @@ public class BrokerOrderEntity {
   @Column(name = "type")
   private String type;
 
-  @Column(name = "reason")  
+  @Column(name = "reason")
   private String reason;
 
   @NotNull

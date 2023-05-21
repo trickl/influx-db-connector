@@ -2,8 +2,8 @@ package com.trickl.influxdb.persistence;
 
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

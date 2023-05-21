@@ -1,8 +1,8 @@
 package com.trickl.influxdb.persistence;
 
 import com.influxdb.annotations.Column;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;

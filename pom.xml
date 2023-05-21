@@ -79,7 +79,7 @@
     <dependency>
       <groupId>com.github.trickl</groupId>
       <artifactId>model-trickl-finance</artifactId>
-      <version>0.0.5-SNAPSHOT</version>
+      <version>0.0.8-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.projectreactor</groupId>	
