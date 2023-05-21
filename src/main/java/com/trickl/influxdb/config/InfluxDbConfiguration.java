@@ -17,12 +17,12 @@ import com.trickl.influxdb.client.SportsEventMatchTimeUpdateClient;
 import com.trickl.influxdb.client.SportsEventOutcomeUpdateClient;
 import com.trickl.influxdb.client.SportsEventPeriodUpdateClient;
 import com.trickl.influxdb.client.SportsEventScoreUpdateClient;
+import com.trickl.influxdb.client.TransactionClient;
 import java.time.Duration;
 import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 
 @Configuration
 public class InfluxDbConfiguration {
@@ -110,6 +110,11 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
+  TransactionClient influxDbTransactionClient() {
+    return new TransactionClient(influxDbAdapter());
+  }
+
+  @Bean
   InstrumentEventClient influxDbInstrumentEventClient() {
     return new InstrumentEventClient(
         influxDbMarketStateChangeClient(),
@@ -123,5 +128,5 @@ public class InfluxDbConfiguration {
   @Bean
   CandleStreamClient influxCandleStreamClient() {
     return new CandleStreamClient(influxDbCandleClient(), Instant::now, Duration.ofMinutes(1));
-  }  
+  }
 }
