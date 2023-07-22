@@ -85,7 +85,7 @@ public class InfluxDbWindowedAverages {
                 + "  |> median()\n"
                 + "\n"
                 + "  return join( tables: '{'f:lhs, l:rhs'}', on: [\"exchangeId\","
-                + " \"instrumentId\"])\n"
+                + " \"instrumentId\", \"_stop\"])\n"
                 + "    |> map(fn: (r) => ('{'\n"
                 + "\n"
                 + "      _time: r._stop,\n"
@@ -106,6 +106,7 @@ public class InfluxDbWindowedAverages {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
+
     return Flux.from(queryApi.query(flux, PriceSourceInstantDouble.class))
         .doOnError(
             BadRequestException.class,

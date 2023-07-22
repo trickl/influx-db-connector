@@ -84,7 +84,7 @@ public class InfluxDbAverageSpread {
                 + "  |> median()\n"
                 + "\n"
                 + "  return join( tables: '{'f:lhs, l:rhs'}', on: [\"exchangeId\","
-                + " \"instrumentId\"])\n"
+                + " \"instrumentId\", \"_stop\"])\n"
                 + "    |> map(fn: (r) => ('{'\n"
                 + "\n"
                 + "      _time: r._stop,\n"
