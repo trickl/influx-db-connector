@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class AnalyticPrimitiveValueClient {
@@ -262,10 +263,10 @@ public class AnalyticPrimitiveValueClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> count(
-      QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
-    return influxDbClient.count(
-        queryBetween, "measurementName", "time", priceSource);
+    return influxDbClient
+        .count(queryBetween, "measurementName", "time", priceSource)
+        .map(PriceSourceInteger::getValue);
   }
 }

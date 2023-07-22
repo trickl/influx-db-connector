@@ -4,6 +4,7 @@ import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.OrderReader;
 import com.trickl.influxdb.binding.OrderWriter;
 import com.trickl.influxdb.persistence.OrderEntity;
+import com.trickl.model.analytics.InstantDouble;
 import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceDouble;
@@ -14,6 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class OrderClient {
@@ -56,7 +58,7 @@ public class OrderClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbFirstLastDuration influxDbClient =
         new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
@@ -70,10 +72,11 @@ public class OrderClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> count(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbCount finder = new InfluxDbCount(influxDbClient, bucket);
-    return finder.count(
-        queryBetween, "order", "price", priceSource, Optional.of("r.depth == \"0\""));
+    return finder
+        .count(queryBetween, "order", "price", priceSource, Optional.of("r.depth == \"0\""))
+        .map(PriceSourceInteger::getValue);
   }
 
   /**
@@ -83,17 +86,19 @@ public class OrderClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceDouble> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Double> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbAverageSpread spreadBetween = new InfluxDbAverageSpread(this.influxDbClient, bucket);
-    return spreadBetween.averageSpread(
-        queryBetween,
-        "order",
-        "price",
-        "order",
-        "price",
-        priceSource,
-        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
-        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""));
+    return spreadBetween
+        .averageSpread(
+            queryBetween,
+            "order",
+            "price",
+            "order",
+            "price",
+            priceSource,
+            Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
+            Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""))
+        .map(PriceSourceDouble::getValue);
   }
 
   /**
@@ -103,19 +108,24 @@ public class OrderClient {
    * @param priceSource The price source
    * @return Windowed averages by instruments
    */
-  public Flux<PriceSourceDouble> windowedAverages(
+  public Flux<InstantDouble> windowedAverages(
       QueryBetween queryBetween, PriceSource priceSource, String windowPeriod) {
     InfluxDbWindowedAverages spreadBetween =
         new InfluxDbWindowedAverages(this.influxDbClient, bucket);
-    return spreadBetween.windowedAverages(
-        queryBetween,
-        "order",
-        "price",
-        "order",
-        "price",
-        windowPeriod,
-        priceSource,
-        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
-        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""));
+    return spreadBetween
+        .windowedAverages(
+            queryBetween,
+            "order",
+            "price",
+            "order",
+            "price",
+            windowPeriod,
+            priceSource,
+            Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
+            Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""))
+        .map(
+            row -> {
+              return new InstantDouble(row.getTime(), row.getValue());
+            });
   }
 }

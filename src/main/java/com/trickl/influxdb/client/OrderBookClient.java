@@ -1,11 +1,13 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.model.analytics.InstantDouble;
 import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.OrderBook;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
 import com.trickl.model.pricing.statistics.PriceSourceDouble;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInstantDouble;
 import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.time.Instant;
 import java.util.List;
@@ -102,7 +104,7 @@ public class OrderBookClient {
    * @param priceSource The price source
    * @return A list of series
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
     return orderClient.firstLastDuration(queryBetween, priceSource);
   }
@@ -114,7 +116,7 @@ public class OrderBookClient {
    * @param priceSource The price source
    * @return A count of orders
    */
-  public Flux<PriceSourceInteger> count(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
     return orderClient.count(queryBetween, priceSource);
   }
 
@@ -125,7 +127,7 @@ public class OrderBookClient {
    * @param priceSource The price source
    * @return The average spread
    */
-  public Flux<PriceSourceDouble> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Double> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
     return orderClient.averageSpread(queryBetween, priceSource);
   }
 
@@ -136,7 +138,7 @@ public class OrderBookClient {
    * @param priceSource The price source
    * @return The average spread
    */
-  public Flux<PriceSourceDouble> windowedAverages(
+  public Flux<InstantDouble> windowedAverages(
       QueryBetween queryBetween, PriceSource priceSource, String windowPeriod) {
     return orderClient.windowedAverages(queryBetween, priceSource, windowPeriod);
   }

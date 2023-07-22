@@ -12,7 +12,7 @@ import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Log
 @RequiredArgsConstructor
@@ -31,7 +31,7 @@ public class InfluxDbFirstLastDuration {
    * @param priceSource filter on this price source
    * @return A list of series
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween,
       String measurementName,
       String fieldName,
@@ -86,7 +86,7 @@ public class InfluxDbFirstLastDuration {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return Flux.from(queryApi.query(flux, PriceSourceFieldFirstLastDuration.class))
+    return Mono.from(queryApi.query(flux, PriceSourceFieldFirstLastDuration.class))
         .doOnError(
             BadRequestException.class,
             e -> {

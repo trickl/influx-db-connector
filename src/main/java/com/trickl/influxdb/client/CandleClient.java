@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class CandleClient {
@@ -109,7 +110,7 @@ public class CandleClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, String candleName, PriceSource priceSource) {
     InfluxDbFirstLastDuration finder = new InfluxDbFirstLastDuration(influxDbClient, bucket);
     return finder.firstLastDuration(queryBetween, candleName, "close", priceSource);

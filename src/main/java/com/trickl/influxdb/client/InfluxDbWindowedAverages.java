@@ -5,7 +5,7 @@ import com.influxdb.client.reactive.QueryReactiveApi;
 import com.influxdb.exceptions.BadRequestException;
 import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.pricing.primitives.PriceSource;
-import com.trickl.model.pricing.statistics.PriceSourceDouble;
+import com.trickl.model.pricing.statistics.PriceSourceInstantDouble;
 import java.text.MessageFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -32,7 +32,7 @@ public class InfluxDbWindowedAverages {
    * @param priceSource filter on this price source
    * @return A list of series
    */
-  public Flux<PriceSourceDouble> windowedAverages(
+  public Flux<PriceSourceInstantDouble> windowedAverages(
       QueryBetween queryBetween,
       String lhsMeasurementName,
       String lhsFieldName,
@@ -106,7 +106,7 @@ public class InfluxDbWindowedAverages {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return Flux.from(queryApi.query(flux, PriceSourceDouble.class))
+    return Flux.from(queryApi.query(flux, PriceSourceInstantDouble.class))
         .doOnError(
             BadRequestException.class,
             e -> {

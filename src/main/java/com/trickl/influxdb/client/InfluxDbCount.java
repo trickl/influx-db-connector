@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Log
 @RequiredArgsConstructor
@@ -32,7 +33,7 @@ public class InfluxDbCount {
    * @param priceSource filter on this price source
    * @return A list of series
    */
-  public Flux<PriceSourceInteger> count(
+  public Mono<PriceSourceInteger> count(
       QueryBetween queryBetween,
       String measurementName,
       String fieldName,
@@ -49,7 +50,7 @@ public class InfluxDbCount {
    * @param priceSource filter on this price source
    * @return A list of series
    */
-  public Flux<PriceSourceInteger> count(
+  public Mono<PriceSourceInteger> count(
       QueryBetween queryBetween,
       String measurementName,
       String fieldName,
@@ -86,7 +87,7 @@ public class InfluxDbCount {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return Flux.from(queryApi.query(flux, PriceSourceInteger.class))
+    return Mono.from(queryApi.query(flux, PriceSourceInteger.class))
         .doOnError(
             BadRequestException.class,
             e -> {

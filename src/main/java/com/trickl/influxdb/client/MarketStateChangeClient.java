@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class MarketStateChangeClient {
@@ -68,7 +69,7 @@ public class MarketStateChangeClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbFirstLastDuration finder = new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
     return finder.firstLastDuration(queryBetween, "market_state_change", "state", priceSource);
@@ -81,8 +82,10 @@ public class MarketStateChangeClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> count(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
-    return influxDbClient.count(queryBetween, "market_state_change", "state", priceSource);
+    return influxDbClient
+        .count(queryBetween, "market_state_change", "state", priceSource)
+        .map(PriceSourceInteger::getValue);
   }
 }

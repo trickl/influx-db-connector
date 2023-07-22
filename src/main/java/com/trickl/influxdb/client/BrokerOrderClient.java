@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class BrokerOrderClient {
@@ -103,10 +104,9 @@ public class BrokerOrderClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    InfluxDbFirstLastDuration finder =
-        new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
+    InfluxDbFirstLastDuration finder = new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
     return finder.firstLastDuration(queryBetween, "broker_order", "price", priceSource);
   }
 
@@ -117,13 +117,12 @@ public class BrokerOrderClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> findOrdercount(
-      QueryBetween queryBetween, PriceSource priceSource, OrderState state) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource, OrderState state) {
     InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
     Optional<String> stateFilter =
-        Optional.ofNullable(state)
-            .map(s -> MessageFormat.format("state == \"{0}\"", s.toString()));
-    return influxDbClient.count(
-        queryBetween, "broker_order", "price", priceSource, stateFilter);
+        Optional.ofNullable(state).map(s -> MessageFormat.format("state == \"{0}\"", s.toString()));
+    return influxDbClient
+        .count(queryBetween, "broker_order", "price", priceSource, stateFilter)
+        .map(PriceSourceInteger::getValue);
   }
 }

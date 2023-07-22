@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 public class SportsEventPeriodUpdateClient {
@@ -68,10 +69,9 @@ public class SportsEventPeriodUpdateClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    InfluxDbFirstLastDuration finder =
-        new InfluxDbFirstLastDuration(influxDbClient, bucket);
+    InfluxDbFirstLastDuration finder = new InfluxDbFirstLastDuration(influxDbClient, bucket);
     return finder.firstLastDuration(
         queryBetween, "sports_event_period_update", "period", priceSource);
   }
@@ -83,10 +83,10 @@ public class SportsEventPeriodUpdateClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> count(
-      QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
-    return influxDbClient.count(
-        queryBetween, "sports_event_period_update", "period", priceSource);
+    return influxDbClient
+        .count(queryBetween, "sports_event_period_update", "period", priceSource)
+        .map(PriceSourceInteger::getValue);
   }
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Log
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class InfluxDbAverageSpread {
    * @param priceSource filter on this price source
    * @return A list of series
    */
-  public Flux<PriceSourceDouble> averageSpread(
+  public Mono<PriceSourceDouble> averageSpread(
       QueryBetween queryBetween,
       String lhsMeasurementName,
       String lhsFieldName,
@@ -105,7 +105,7 @@ public class InfluxDbAverageSpread {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return Flux.from(queryApi.query(flux, PriceSourceDouble.class))
+    return Mono.from(queryApi.query(flux, PriceSourceDouble.class))
         .doOnError(
             BadRequestException.class,
             e -> {
