@@ -29,10 +29,12 @@ public class BrokerOrderWriter implements Function<Order, BrokerOrderEntity> {
         .createdAtTime(Rfc3339.YMDHMSM_FORMATTER.format(order.getCreatedAtTime()))
         .quantityUnfilled(
             Optional.ofNullable(order.getQuantityUnfilled())
-                .map(BigDecimal::longValue)
+                .map(BigDecimal::doubleValue)
                 .orElse(null))
         .quantityFilled(
-            Optional.ofNullable(order.getQuantityFilled()).map(BigDecimal::longValue).orElse(null))
+            Optional.ofNullable(order.getQuantityFilled())
+                .map(BigDecimal::doubleValue)
+                .orElse(null))
         .brokerId(order.getId())
         .clientReference(order.getClientReference())
         .timeInForce(Optional.ofNullable(order.getTimeInForce()).map(Object::toString).orElse(null))

@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.AggregatedSportsEventIncidentReader;
 import com.trickl.influxdb.binding.SportsEventIncidentReader;
 import com.trickl.influxdb.binding.SportsEventIncidentWriter;
@@ -12,6 +13,7 @@ import com.trickl.model.event.sports.SportsEventIncidentType;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collections;
@@ -26,9 +28,11 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class SportsEventIncidentClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
 
-  private final InfluxDbAggregator influxDbAggregator;
+  private final String bucket;
+
+  private final String organisation;
 
   /**
    * Stores prices in the database.
@@ -41,7 +45,8 @@ public class SportsEventIncidentClient {
     SportsEventIncidentWriter transformer = new SportsEventIncidentWriter(priceSource);
     List<SportsEventIncidentEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
+    return influxDbStorage.store(
         measurements, SportsEventIncidentEntity.class, SportsEventIncidentEntity::getTime);
   }
 
@@ -56,8 +61,8 @@ public class SportsEventIncidentClient {
     SportsEventIncidentReader reader = new SportsEventIncidentReader();
 
     Set<String> incidentTypes = getIncidentTypes(eventSource);
-
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(influxDbClient, bucket);
+    return finder
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
@@ -79,8 +84,8 @@ public class SportsEventIncidentClient {
   public Flux<AggregatedInstrumentEvents> findAggregatedBetween(
       EventSource eventSource, QueryBetween queryBetween) {
     AggregatedSportsEventIncidentReader reader = new AggregatedSportsEventIncidentReader();
-
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(influxDbClient, bucket);
+    return finder
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
@@ -106,6 +111,8 @@ public class SportsEventIncidentClient {
             eventSource.getEventSubType(),
             aggregateEventWidth.toString().substring(2).toLowerCase());
     Set<String> incidentTypes = getIncidentTypes(eventSource);
+    InfluxDbAggregator influxDbAggregator =
+        new InfluxDbAggregator(influxDbClient, bucket, organisation);
     return influxDbAggregator
         .aggregateSportsEventIncidentsBetween(
             eventSource.getPriceSource(),
@@ -125,9 +132,11 @@ public class SportsEventIncidentClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return influxDbClient.findFieldFirstLastCountByDay(
+    InfluxDbFirstLastDuration finder =
+        new InfluxDbFirstLastDuration(influxDbClient, bucket);
+    return finder.firstLastDuration(
         queryBetween, "sports_event_incident", "matchTime", priceSource);
   }
 
@@ -150,5 +159,19 @@ public class SportsEventIncidentClient {
       }
     }
     return Collections.emptySet();
+  }
+
+  /**
+   * Find a count of incidents between a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Counts by instruments
+   */
+  public Flux<PriceSourceInteger> count(
+      QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
+    return influxDbClient.count(
+        queryBetween, "sports_event_incident", "matchTime", priceSource);
   }
 }

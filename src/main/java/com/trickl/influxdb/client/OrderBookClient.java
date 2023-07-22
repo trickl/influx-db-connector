@@ -4,10 +4,11 @@ import com.trickl.model.pricing.primitives.Order;
 import com.trickl.model.pricing.primitives.OrderBook;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.Quote;
+import com.trickl.model.pricing.statistics.PriceSourceDouble;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -31,16 +32,16 @@ public class OrderBookClient {
     Mono<Flux<Integer>> storeBids =
         Flux.fromIterable(orderBooks)
             .flatMap(
-                orderBook -> Flux.fromIterable(
-                    getOrders(orderBook.getBids(), true, orderBook.getTime())))
+                orderBook ->
+                    Flux.fromIterable(getOrders(orderBook.getBids(), true, orderBook.getTime())))
             .collectList()
             .map(list -> orderClient.store(priceSource, list));
 
     Mono<Flux<Integer>> storeAsks =
         Flux.fromIterable(orderBooks)
             .flatMap(
-                orderBook -> Flux.fromIterable(
-                    getOrders(orderBook.getAsks(), false, orderBook.getTime())))
+                orderBook ->
+                    Flux.fromIterable(getOrders(orderBook.getAsks(), false, orderBook.getTime())))
             .collectList()
             .map(list -> orderClient.store(priceSource, list));
 
@@ -62,27 +63,36 @@ public class OrderBookClient {
   }
 
   protected static Mono<OrderBook> getOrderBook(Flux<Order> orderFlux) {
-    return orderFlux.collectList()
-      .map(orders -> 
-          OrderBook.builder()
-            .bids(getQuotes(orders, true))
-            .asks(getQuotes(orders, false))
-            .time(orders.get(0).getTime())
-            .build());       
+    return orderFlux
+        .collectList()
+        .map(
+            orders ->
+                OrderBook.builder()
+                    .bids(getQuotes(orders, true))
+                    .asks(getQuotes(orders, false))
+                    .time(orders.get(0).getTime())
+                    .build());
   }
 
   protected static List<Order> getOrders(List<Quote> quotes, boolean isBid, Instant time) {
     return IntStream.range(0, quotes.size())
-      .mapToObj(depth -> Order.builder().quote(
-          quotes.get(depth)).isBid(isBid).time(time).depth(depth).build())
-      .collect(Collectors.toList());
+        .mapToObj(
+            depth ->
+                Order.builder()
+                    .quote(quotes.get(depth))
+                    .isBid(isBid)
+                    .time(time)
+                    .depth(depth)
+                    .build())
+        .collect(Collectors.toList());
   }
 
-
   protected static List<Quote> getQuotes(List<Order> orders, boolean isBid) {
-    return orders.stream().filter(quote -> quote.isBid() == isBid)
+    return orders.stream()
+        .filter(quote -> quote.isBid() == isBid)
         .sorted((a, b) -> a.getDepth() - b.getDepth())
-        .map(Order::getQuote).collect(Collectors.toList());
+        .map(Order::getQuote)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -92,8 +102,30 @@ public class OrderBookClient {
    * @param priceSource The price source
    * @return A list of series
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return orderClient.findSummary(queryBetween, priceSource);
+    return orderClient.firstLastDuration(queryBetween, priceSource);
+  }
+
+  /**
+   * Get a count of all prices within a time window.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return A count of orders
+   */
+  public Flux<PriceSourceInteger> count(QueryBetween queryBetween, PriceSource priceSource) {
+    return orderClient.count(queryBetween, priceSource);
+  }
+
+  /**
+   * Get the average spread within a time window.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return The average spread
+   */
+  public Flux<PriceSourceDouble> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
+    return orderClient.averageSpread(queryBetween, priceSource);
   }
 }

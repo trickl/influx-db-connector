@@ -16,7 +16,7 @@ public class CandleStreamClientTest {
 
   @Mock private InfluxDBClient influxDb;
 
-  private InfluxDbAdapter influxDbClient;
+  private InfluxDbStorage influxDbClient;
 
   private CandleStreamClient candleStreamClient;
 

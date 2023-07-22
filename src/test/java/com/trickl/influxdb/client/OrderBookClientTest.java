@@ -16,7 +16,7 @@ public class OrderBookClientTest {
 
   @Mock private InfluxDBClient influxDb;
 
-  private InfluxDbAdapter influxDbClient;
+  private InfluxDbStorage influxDbClient;
 
   private OrderBookClient orderBookClient;
 

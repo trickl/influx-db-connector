@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.BrokerOrderReader;
 import com.trickl.influxdb.binding.BrokerOrderWriter;
 import com.trickl.influxdb.persistence.BrokerOrderEntity;
@@ -9,11 +10,14 @@ import com.trickl.model.broker.orders.OrderStateFilter;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.TemporalPriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -23,7 +27,9 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class BrokerOrderClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
+
+  private final String bucket;
 
   /**
    * Stores broker orders in the database.
@@ -36,7 +42,8 @@ public class BrokerOrderClient {
     BrokerOrderWriter transformer = new BrokerOrderWriter(temporalPriceSource);
     List<BrokerOrderEntity> measurements =
         orders.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(measurements, BrokerOrderEntity.class, BrokerOrderEntity::getTime);
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
+    return influxDbStorage.store(measurements, BrokerOrderEntity.class, BrokerOrderEntity::getTime);
   }
 
   /**
@@ -50,7 +57,7 @@ public class BrokerOrderClient {
   public Flux<Order> findBetween(
       TemporalPriceSource temporalPriceSource,
       QueryBetween queryBetween,
-      OrderStateFilter orderStateFilter) {    
+      OrderStateFilter orderStateFilter) {
     Map<String, Set<String>> filter = new HashMap<>();
     filter.put("simulationId", Collections.singleton(temporalPriceSource.getTemporalSource()));
     Set<String> allowedStates = new HashSet<>();
@@ -77,7 +84,8 @@ public class BrokerOrderClient {
     filter.put("state", allowedStates);
 
     BrokerOrderReader reader = new BrokerOrderReader();
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(this.influxDbClient, bucket);
+    return finder
         .findBetween(
             temporalPriceSource.getPriceSource(),
             queryBetween,
@@ -95,9 +103,27 @@ public class BrokerOrderClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return influxDbClient.findFieldFirstLastCountByDay(
-        queryBetween, "broker_order", "price", priceSource);
+    InfluxDbFirstLastDuration finder =
+        new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
+    return finder.firstLastDuration(queryBetween, "broker_order", "price", priceSource);
+  }
+
+  /**
+   * Find a count of orders between a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Counts by instruments
+   */
+  public Flux<PriceSourceInteger> findOrdercount(
+      QueryBetween queryBetween, PriceSource priceSource, OrderState state) {
+    InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
+    Optional<String> stateFilter =
+        Optional.ofNullable(state)
+            .map(s -> MessageFormat.format("state == \"{0}\"", s.toString()));
+    return influxDbClient.count(
+        queryBetween, "broker_order", "price", priceSource, stateFilter);
   }
 }

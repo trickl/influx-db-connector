@@ -19,8 +19,8 @@ public class BrokerOrderReader implements Function<BrokerOrderEntity, Order> {
   public Order apply(BrokerOrderEntity orderEntity) {
     double price = Optional.ofNullable(orderEntity.getPrice()).orElse(Double.NaN);
     long volume = Optional.ofNullable(orderEntity.getVolume()).orElse(0L);
-    long quantityUnfilled = Optional.ofNullable(orderEntity.getQuantityUnfilled()).orElse(0L);
-    long quantityFilled = Optional.ofNullable(orderEntity.getQuantityFilled()).orElse(0L);
+    double quantityUnfilled = Optional.ofNullable(orderEntity.getQuantityUnfilled()).orElse(0.0);
+    double quantityFilled = Optional.ofNullable(orderEntity.getQuantityFilled()).orElse(0.0);
     return Order.builder()
         .price(Double.isNaN(price) ? BigDecimal.ZERO : BigDecimal.valueOf(price))
         .quantity(BigDecimal.valueOf(volume))

@@ -1,4 +1,4 @@
-package com.trickl.influxdb.client;
+package com.trickl.influxdb.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -9,7 +9,7 @@ public class NoSuchMeasurementTypeException extends Exception {
   private static final long serialVersionUID = -2618855214071451042L;
 
   /**
-   * Construct a {@link NoSuchMeasurementTypeException} with a generic message.
+   * Construct a {@link MeasurementNotSupportedException} with a generic message.
    *
    * @param msg the message
    */
@@ -18,7 +18,7 @@ public class NoSuchMeasurementTypeException extends Exception {
   }
 
   /**
-   * Construct a {@link NoSuchMeasurementTypeException} with a generic message and a cause.
+   * Construct a {@link MeasurementNotSupportedException} with a generic message and a cause.
    *
    * @param msg the message
    * @param cause the cause of the exception

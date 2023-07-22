@@ -52,11 +52,11 @@ public class BrokerOrderEntity {
 
   @Min(0)
   @Column(name = "quantityUnfilled")
-  protected Long quantityUnfilled;
+  protected Double quantityUnfilled;
 
   @Min(0)
   @Column(name = "quantityFilled")
-  protected Long quantityFilled;
+  protected Double quantityFilled;
 
   @NotNull
   @Column(name = "brokerId")

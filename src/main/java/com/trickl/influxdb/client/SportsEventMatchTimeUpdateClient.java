@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.AggregatedSportsEventMatchTimeUpdateReader;
 import com.trickl.influxdb.binding.SportsEventMatchTimeUpdateReader;
 import com.trickl.influxdb.binding.SportsEventMatchTimeUpdateWriter;
@@ -10,6 +11,7 @@ import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.List;
@@ -21,9 +23,11 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class SportsEventMatchTimeUpdateClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
 
-  private final InfluxDbAggregator influxDbAggregator;
+  private final String bucket;
+
+  private final String organisation;
 
   /**
    * Stores prices in the database.
@@ -37,7 +41,8 @@ public class SportsEventMatchTimeUpdateClient {
         new SportsEventMatchTimeUpdateWriter(priceSource);
     List<SportsEventMatchTimeUpdateEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
+    return influxDbStorage.store(
         measurements,
         SportsEventMatchTimeUpdateEntity.class,
         SportsEventMatchTimeUpdateEntity::getTime);
@@ -57,7 +62,8 @@ public class SportsEventMatchTimeUpdateClient {
       // Sub-types not supported
       return Flux.empty();
     }
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(influxDbClient, bucket);
+    return finder
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
@@ -78,7 +84,8 @@ public class SportsEventMatchTimeUpdateClient {
     AggregatedSportsEventMatchTimeUpdateReader reader =
         new AggregatedSportsEventMatchTimeUpdateReader();
 
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(influxDbClient, bucket);
+    return finder
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
@@ -103,6 +110,8 @@ public class SportsEventMatchTimeUpdateClient {
         MessageFormat.format(
             "{0}_{1}",
             eventSource.getEventType(), aggregateEventWidth.toString().substring(2).toLowerCase());
+    InfluxDbAggregator influxDbAggregator =
+        new InfluxDbAggregator(influxDbClient, bucket, organisation);
     return influxDbAggregator
         .aggregateSportsEventMatchTimeUpdatesBetween(
             eventSource.getPriceSource(),
@@ -120,9 +129,29 @@ public class SportsEventMatchTimeUpdateClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return influxDbClient.findFieldFirstLastCountByDay(
+    InfluxDbFirstLastDuration finder =
+        new InfluxDbFirstLastDuration(influxDbClient, bucket);
+    return finder.firstLastDuration(
         queryBetween, "sports_event_match_time_update", "remaining_time", priceSource);
+  }
+
+  /**
+   * Find a count of match time updates between a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Counts by instruments
+   */
+  public Flux<PriceSourceInteger> count(
+      QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
+    return influxDbClient.count(
+        queryBetween,
+        "sports_event_match_time_update",
+        "remaining_time",
+        priceSource,
+        Optional.empty());
   }
 }

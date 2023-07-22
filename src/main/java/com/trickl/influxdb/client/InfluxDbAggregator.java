@@ -2,6 +2,7 @@ package com.trickl.influxdb.client;
 
 import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.influxdb.client.reactive.QueryReactiveApi;
+import com.influxdb.exceptions.BadRequestException;
 import com.trickl.influxdb.persistence.AggregatedSportsEventIncidentEntity;
 import com.trickl.influxdb.persistence.AggregatedSportsEventMatchTimeUpdateEntity;
 import com.trickl.influxdb.persistence.AggregatedSportsEventScoreUpdateEntity;
@@ -14,11 +15,13 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.apache.commons.lang3.tuple.Pair;
-import reactor.adapter.rxjava.RxJava2Adapter;
 import reactor.core.publisher.Flux;
 
+@Log
 @RequiredArgsConstructor
 public class InfluxDbAggregator {
 
@@ -90,7 +93,12 @@ public class InfluxDbAggregator {
             organisation);
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return RxJava2Adapter.flowableToFlux(queryApi.query(flux, OhlcvBarEntity.class));
+    return Flux.from(queryApi.query(flux, OhlcvBarEntity.class))
+        .doOnError(
+            BadRequestException.class,
+            e -> {
+              log.log(Level.WARNING, "Error executing query: " + flux);
+            });
   }
 
   /**
@@ -178,8 +186,7 @@ public class InfluxDbAggregator {
             organisation);
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return RxJava2Adapter.flowableToFlux(
-        queryApi.query(flux, AggregatedSportsEventIncidentEntity.class));
+    return Flux.from(queryApi.query(flux, AggregatedSportsEventIncidentEntity.class));
   }
 
   /**
@@ -317,8 +324,7 @@ public class InfluxDbAggregator {
             organisation);
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return RxJava2Adapter.flowableToFlux(
-        queryApi.query(flux, AggregatedSportsEventScoreUpdateEntity.class));
+    return Flux.from(queryApi.query(flux, AggregatedSportsEventScoreUpdateEntity.class));
   }
 
   /**
@@ -412,7 +418,6 @@ public class InfluxDbAggregator {
             organisation);
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
-    return RxJava2Adapter.flowableToFlux(
-        queryApi.query(flux, AggregatedSportsEventMatchTimeUpdateEntity.class));
+    return Flux.from(queryApi.query(flux, AggregatedSportsEventMatchTimeUpdateEntity.class));
   }
 }

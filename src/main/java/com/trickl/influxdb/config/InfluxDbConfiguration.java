@@ -6,8 +6,6 @@ import com.trickl.influxdb.client.AnalyticPrimitiveValueClient;
 import com.trickl.influxdb.client.BrokerOrderClient;
 import com.trickl.influxdb.client.CandleClient;
 import com.trickl.influxdb.client.CandleStreamClient;
-import com.trickl.influxdb.client.InfluxDbAdapter;
-import com.trickl.influxdb.client.InfluxDbAggregator;
 import com.trickl.influxdb.client.InstrumentEventClient;
 import com.trickl.influxdb.client.MarketStateChangeClient;
 import com.trickl.influxdb.client.OrderBookClient;
@@ -45,23 +43,13 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
-  InfluxDbAdapter influxDbAdapter() {
-    return new InfluxDbAdapter(influxDbClient(), bucket);
-  }
-
-  @Bean
-  InfluxDbAggregator influxDbAggregator() {
-    return new InfluxDbAggregator(influxDbClient(), bucket, org);
-  }
-
-  @Bean
   CandleClient influxDbCandleClient() {
-    return new CandleClient(influxDbAdapter(), influxDbAggregator());
+    return new CandleClient(influxDbClient(), bucket, org);
   }
 
   @Bean
   OrderClient influxDbOrderClient() {
-    return new OrderClient(influxDbAdapter());
+    return new OrderClient(influxDbClient(), bucket);
   }
 
   @Bean
@@ -71,47 +59,47 @@ public class InfluxDbConfiguration {
 
   @Bean
   MarketStateChangeClient influxDbMarketStateChangeClient() {
-    return new MarketStateChangeClient(influxDbAdapter());
+    return new MarketStateChangeClient(influxDbClient(), bucket);
   }
 
   @Bean
   SportsEventOutcomeUpdateClient influxDbSportsEventOutcomeUpdateClient() {
-    return new SportsEventOutcomeUpdateClient(influxDbAdapter());
+    return new SportsEventOutcomeUpdateClient(influxDbClient(), bucket);
   }
 
   @Bean
   SportsEventScoreUpdateClient influxDbSportsEventScoreUpdateClient() {
-    return new SportsEventScoreUpdateClient(influxDbAdapter(), influxDbAggregator());
+    return new SportsEventScoreUpdateClient(influxDbClient(), bucket, org);
   }
 
   @Bean
   SportsEventPeriodUpdateClient influxDbSportsEventPeriodUpdateClient() {
-    return new SportsEventPeriodUpdateClient(influxDbAdapter());
+    return new SportsEventPeriodUpdateClient(influxDbClient(), bucket);
   }
 
   @Bean
   SportsEventMatchTimeUpdateClient influxDbSportsEventMatchTimeUpdateClient() {
-    return new SportsEventMatchTimeUpdateClient(influxDbAdapter(), influxDbAggregator());
+    return new SportsEventMatchTimeUpdateClient(influxDbClient(), bucket, org);
   }
 
   @Bean
   SportsEventIncidentClient influxDbSportsEventIncidentClient() {
-    return new SportsEventIncidentClient(influxDbAdapter(), influxDbAggregator());
+    return new SportsEventIncidentClient(influxDbClient(), bucket, org);
   }
 
   @Bean
   AnalyticPrimitiveValueClient influxDbAnalyticPrimitiveValueClient() {
-    return new AnalyticPrimitiveValueClient(influxDbAdapter());
+    return new AnalyticPrimitiveValueClient(influxDbClient(), bucket);
   }
 
   @Bean
   BrokerOrderClient influxDbBrokerOrderClient() {
-    return new BrokerOrderClient(influxDbAdapter());
+    return new BrokerOrderClient(influxDbClient(), bucket);
   }
 
   @Bean
   TransactionClient influxDbTransactionClient() {
-    return new TransactionClient(influxDbAdapter());
+    return new TransactionClient(influxDbClient(), bucket);
   }
 
   @Bean

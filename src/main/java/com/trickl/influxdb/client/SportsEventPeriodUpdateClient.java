@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.SportsEventPeriodUpdateReader;
 import com.trickl.influxdb.binding.SportsEventPeriodUpdateWriter;
 import com.trickl.influxdb.persistence.SportsEventPeriodUpdateEntity;
@@ -7,8 +8,8 @@ import com.trickl.model.event.sports.SportsEventPeriodUpdate;
 import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
@@ -16,7 +17,9 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class SportsEventPeriodUpdateClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
+
+  private final String bucket;
 
   /**
    * Stores prices in the database.
@@ -26,11 +29,11 @@ public class SportsEventPeriodUpdateClient {
    * @return the number of records stored
    */
   public Flux<Integer> store(PriceSource priceSource, List<SportsEventPeriodUpdate> events) {
-    SportsEventPeriodUpdateWriter transformer =
-        new SportsEventPeriodUpdateWriter(priceSource);
+    SportsEventPeriodUpdateWriter transformer = new SportsEventPeriodUpdateWriter(priceSource);
     List<SportsEventPeriodUpdateEntity> measurements =
         events.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
+    return influxDbStorage.store(
         measurements, SportsEventPeriodUpdateEntity.class, SportsEventPeriodUpdateEntity::getTime);
   }
 
@@ -48,7 +51,8 @@ public class SportsEventPeriodUpdateClient {
       // Sub-types not supported
       return Flux.empty();
     }
-    return influxDbClient
+    InfluxDbFindBetween finder = new InfluxDbFindBetween(influxDbClient, bucket);
+    return finder
         .findBetween(
             eventSource.getPriceSource(),
             queryBetween,
@@ -64,9 +68,25 @@ public class SportsEventPeriodUpdateClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return influxDbClient.findFieldFirstLastCountByDay(
+    InfluxDbFirstLastDuration finder =
+        new InfluxDbFirstLastDuration(influxDbClient, bucket);
+    return finder.firstLastDuration(
+        queryBetween, "sports_event_period_update", "period", priceSource);
+  }
+
+  /**
+   * Find a count of period updates between a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Counts by instruments
+   */
+  public Flux<PriceSourceInteger> count(
+      QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
+    return influxDbClient.count(
         queryBetween, "sports_event_period_update", "period", priceSource);
   }
 }

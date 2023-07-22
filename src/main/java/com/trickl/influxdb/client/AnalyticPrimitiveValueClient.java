@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.AnalyticBooleanValueReader;
 import com.trickl.influxdb.binding.AnalyticBooleanValueWriter;
 import com.trickl.influxdb.binding.AnalyticDoubleValueReader;
@@ -20,6 +21,7 @@ import com.trickl.model.analytics.InstantString;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.primitives.TemporalPriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
+import com.trickl.model.pricing.statistics.PriceSourceInteger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +36,9 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class AnalyticPrimitiveValueClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
+
+  private final String bucket;
 
   /**
    * Stores analytics in the database.
@@ -45,15 +49,14 @@ public class AnalyticPrimitiveValueClient {
    * @return counts of records stored
    */
   public Flux<Integer> storeDoubles(
-      AnalyticId analyticId,
-      TemporalPriceSource temporalPriceSource,      
-      List<InstantDouble> values) {
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, List<InstantDouble> values) {
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
     AnalyticDoubleValueWriter transformer =
         new AnalyticDoubleValueWriter(analyticId, temporalPriceSource);
     List<AnalyticDoubleValueEntity> measurements =
         values.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
-      measurements, AnalyticDoubleValueEntity.class, AnalyticDoubleValueEntity::getTime);
+    return influxDbStorage.store(
+        measurements, AnalyticDoubleValueEntity.class, AnalyticDoubleValueEntity::getTime);
   }
 
   /**
@@ -65,15 +68,14 @@ public class AnalyticPrimitiveValueClient {
    * @return counts of records stored
    */
   public Flux<Integer> storeIntegers(
-      AnalyticId analyticId,
-      TemporalPriceSource temporalPriceSource,      
-      List<InstantInteger> values) {
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, List<InstantInteger> values) {
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
     AnalyticIntegerValueWriter transformer =
         new AnalyticIntegerValueWriter(analyticId, temporalPriceSource);
     List<AnalyticIntegerValueEntity> measurements =
         values.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
-      measurements, AnalyticIntegerValueEntity.class, AnalyticIntegerValueEntity::getTime);
+    return influxDbStorage.store(
+        measurements, AnalyticIntegerValueEntity.class, AnalyticIntegerValueEntity::getTime);
   }
 
   /**
@@ -85,15 +87,14 @@ public class AnalyticPrimitiveValueClient {
    * @return counts of records stored
    */
   public Flux<Integer> storeStrings(
-      AnalyticId analyticId,
-      TemporalPriceSource temporalPriceSource,      
-      List<InstantString> values) {
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, List<InstantString> values) {
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
     AnalyticStringValueWriter transformer =
         new AnalyticStringValueWriter(analyticId, temporalPriceSource);
     List<AnalyticStringValueEntity> measurements =
         values.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
-      measurements, AnalyticStringValueEntity.class, AnalyticStringValueEntity::getTime);
+    return influxDbStorage.store(
+        measurements, AnalyticStringValueEntity.class, AnalyticStringValueEntity::getTime);
   }
 
   /**
@@ -105,15 +106,14 @@ public class AnalyticPrimitiveValueClient {
    * @return counts of records stored
    */
   public Flux<Integer> storeBooleans(
-      AnalyticId analyticId,
-      TemporalPriceSource temporalPriceSource,      
-      List<InstantBoolean> values) {
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource, List<InstantBoolean> values) {
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
     AnalyticBooleanValueWriter transformer =
         new AnalyticBooleanValueWriter(analyticId, temporalPriceSource);
     List<AnalyticBooleanValueEntity> measurements =
         values.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(
-      measurements, AnalyticBooleanValueEntity.class, AnalyticBooleanValueEntity::getTime);
+    return influxDbStorage.store(
+        measurements, AnalyticBooleanValueEntity.class, AnalyticBooleanValueEntity::getTime);
   }
 
   /**
@@ -141,8 +141,8 @@ public class AnalyticPrimitiveValueClient {
     if (analyticId.getParameters() != null && analyticId.getParameters().length() > 0) {
       analyticSpec.put("parameters", Collections.singleton(analyticId.getParameters()));
     }
-
-    return influxDbClient.findBetween(
+    InfluxDbFindBetween findBetween = new InfluxDbFindBetween(this.influxDbClient, bucket);
+    return findBetween.findBetween(
         temporalPriceSource.getPriceSource(),
         queryBetween,
         measurementName,
@@ -238,8 +238,10 @@ public class AnalyticPrimitiveValueClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbFirstLastDuration influxDbAdapter =
+        new InfluxDbFirstLastDuration(influxDbClient, bucket);
     return Flux.concat(
         Stream.of(
                 "analytic_double_value",
@@ -248,8 +250,22 @@ public class AnalyticPrimitiveValueClient {
                 "analytic_boolean_value")
             .map(
                 measurementName ->
-                    influxDbClient.findFieldFirstLastCountByDay(
+                    influxDbAdapter.firstLastDuration(
                         queryBetween, "measurementName", "time", priceSource))
             .collect(Collectors.toList()));
+  }
+
+  /**
+   * Find a count of analytic values between a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Counts by instruments
+   */
+  public Flux<PriceSourceInteger> count(
+      QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
+    return influxDbClient.count(
+        queryBetween, "measurementName", "time", priceSource);
   }
 }

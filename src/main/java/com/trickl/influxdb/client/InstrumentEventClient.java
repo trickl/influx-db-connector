@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.trickl.influxdb.exceptions.MeasurementNotSupportedException;
 import com.trickl.model.event.InstrumentEvent;
 import com.trickl.model.event.InstrumentEventType;
 import com.trickl.model.event.MarketStateChange;
@@ -12,7 +13,6 @@ import com.trickl.model.pricing.primitives.EventSource;
 import com.trickl.model.pricing.primitives.PriceSource;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -111,7 +111,7 @@ public class InstrumentEventClient {
       instrumentEventType = InstrumentEventType.fromShortName(eventSource.getEventType());
     } catch (IllegalArgumentException ex) {
       return Flux.error(
-          new NoSuchMeasurementTypeException(
+          new MeasurementNotSupportedException(
               "EventType: " + eventSource.getEventType() + " not supported."));
     }
 
@@ -143,7 +143,7 @@ public class InstrumentEventClient {
               .cast(InstrumentEvent.class);
         default:
           return Flux.error(
-              new NoSuchMeasurementTypeException(
+              new MeasurementNotSupportedException(
                   "EventType: " + eventSource.getEventType() + " not supported."));
       }
     } else {
@@ -159,7 +159,7 @@ public class InstrumentEventClient {
         aggregatedEventType = InstrumentEventType.fromShortName(eventTypeBase);
       } catch (IllegalArgumentException ex) {
         return Flux.error(
-            new NoSuchMeasurementTypeException(
+            new MeasurementNotSupportedException(
                 "EventType: " + eventSource.getEventType() + " not supported."));
       }
       
@@ -178,16 +178,16 @@ public class InstrumentEventClient {
               .cast(InstrumentEvent.class);
         case SPORTS_EVENT_OUTCOME_CHANGE:
           return Flux.error(
-              new NoSuchMeasurementTypeException("Aggregate outcome events not supported."));
+              new MeasurementNotSupportedException("Aggregate outcome events not supported."));
         case SPORTS_EVENT_PERIOD_UPDATE:
           return Flux.error(
-              new NoSuchMeasurementTypeException("Aggregate period events not supported."));
+              new MeasurementNotSupportedException("Aggregate period events not supported."));
         case MARKET_STATE_CHANGE:
           return Flux.error(
-              new NoSuchMeasurementTypeException("Aggregate market events not supported."));
+              new MeasurementNotSupportedException("Aggregate market events not supported."));
         default:
           return Flux.error(
-              new NoSuchMeasurementTypeException(
+              new MeasurementNotSupportedException(
                   "EventType: " + eventSource.getEventType() + " not supported."));
       }
     }
@@ -205,7 +205,7 @@ public class InstrumentEventClient {
       EventSource eventSource, QueryBetween queryBetween, Duration aggregateEventWidth) {
     if (eventSource.getEventType() == null) {
       return Flux.error(
-          new NoSuchMeasurementTypeException("Can only aggregate specific event types."));
+          new MeasurementNotSupportedException("Can only aggregate specific event types."));
     }
 
     String eventTypeLowerCase = eventSource.getEventType().toLowerCase();
@@ -231,7 +231,7 @@ public class InstrumentEventClient {
             .cast(InstrumentEvent.class);
       default:
         return Flux.error(
-            new NoSuchMeasurementTypeException(
+            new MeasurementNotSupportedException(
                 "EventType: " + eventSource.getEventType() + " not supported."));
     }
   }

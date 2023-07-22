@@ -1,5 +1,6 @@
 package com.trickl.influxdb.client;
 
+import com.influxdb.client.reactive.InfluxDBClientReactive;
 import com.trickl.influxdb.binding.TransactionReader;
 import com.trickl.influxdb.binding.TransactionWriter;
 import com.trickl.influxdb.persistence.TransactionEntity;
@@ -16,7 +17,9 @@ import reactor.core.publisher.Flux;
 @RequiredArgsConstructor
 public class TransactionClient {
 
-  private final InfluxDbAdapter influxDbClient;
+  private final InfluxDBClientReactive influxDbClient;
+
+  private final String bucket;
 
   /**
    * Stores broker transactions in the database.
@@ -27,10 +30,11 @@ public class TransactionClient {
    */
   public Flux<Integer> store(
       TemporalPriceSource temporalPriceSource, List<Transaction> transactions) {
+    InfluxDbStorage influxDbStorage = new InfluxDbStorage(influxDbClient, bucket);
     TransactionWriter transformer = new TransactionWriter(temporalPriceSource);
     List<TransactionEntity> measurements =
         transactions.stream().map(transformer).collect(Collectors.toList());
-    return influxDbClient.store(measurements, TransactionEntity.class, TransactionEntity::getTime);
+    return influxDbStorage.store(measurements, TransactionEntity.class, TransactionEntity::getTime);
   }
 
   /**
@@ -43,6 +47,7 @@ public class TransactionClient {
   public Flux<Transaction> findBetween(
       TemporalPriceSource temporalPriceSource, QueryBetween queryBetween) {
     TransactionReader reader = new TransactionReader();
+    InfluxDbFindBetween influxDbClient = new InfluxDbFindBetween(this.influxDbClient, bucket);
     return influxDbClient
         .findBetween(
             temporalPriceSource.getPriceSource(),
@@ -61,9 +66,11 @@ public class TransactionClient {
    * @param priceSource The price source
    * @return A list of series, including the first and last value of a field
    */
-  public Flux<PriceSourceFieldFirstLastDuration> findSummary(
+  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
       QueryBetween queryBetween, PriceSource priceSource) {
-    return influxDbClient.findFieldFirstLastCountByDay(
+    InfluxDbFirstLastDuration influxDbClient =
+        new InfluxDbFirstLastDuration(this.influxDbClient, bucket);
+    return influxDbClient.firstLastDuration(
         queryBetween, "transaction", "price", priceSource);
   }
 }
