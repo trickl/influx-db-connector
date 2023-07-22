@@ -70,8 +70,7 @@ public class OrderClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceInteger> count(
-      QueryBetween queryBetween, PriceSource priceSource) {
+  public Flux<PriceSourceInteger> count(QueryBetween queryBetween, PriceSource priceSource) {
     InfluxDbCount finder = new InfluxDbCount(influxDbClient, bucket);
     return finder.count(
         queryBetween, "order", "price", priceSource, Optional.of("r.depth == \"0\""));
@@ -84,16 +83,37 @@ public class OrderClient {
    * @param priceSource The price source
    * @return Counts by instruments
    */
-  public Flux<PriceSourceDouble> averageSpread(
-      QueryBetween queryBetween, PriceSource priceSource) {
-    InfluxDbAverageSpread spreadBetween =
-        new InfluxDbAverageSpread(this.influxDbClient, bucket);
+  public Flux<PriceSourceDouble> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
+    InfluxDbAverageSpread spreadBetween = new InfluxDbAverageSpread(this.influxDbClient, bucket);
     return spreadBetween.averageSpread(
         queryBetween,
         "order",
         "price",
         "order",
         "price",
+        priceSource,
+        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
+        Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""));
+  }
+
+  /**
+   * Get windowed averages over a period of time, grouped by instrument.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return Windowed averages by instruments
+   */
+  public Flux<PriceSourceDouble> windowedAverages(
+      QueryBetween queryBetween, PriceSource priceSource, String windowPeriod) {
+    InfluxDbWindowedAverages spreadBetween =
+        new InfluxDbWindowedAverages(this.influxDbClient, bucket);
+    return spreadBetween.windowedAverages(
+        queryBetween,
+        "order",
+        "price",
+        "order",
+        "price",
+        windowPeriod,
         priceSource,
         Optional.of("r.depth == \"0\" and r.bidOrAsk == \"B\""),
         Optional.of("r.depth == \"0\" and r.bidOrAsk == \"A\""));

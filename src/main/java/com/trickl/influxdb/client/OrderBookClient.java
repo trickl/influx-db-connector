@@ -128,4 +128,16 @@ public class OrderBookClient {
   public Flux<PriceSourceDouble> averageSpread(QueryBetween queryBetween, PriceSource priceSource) {
     return orderClient.averageSpread(queryBetween, priceSource);
   }
+
+  /**
+   * Get the windowed averages within a time window.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param priceSource The price source
+   * @return The average spread
+   */
+  public Flux<PriceSourceDouble> windowedAverages(
+      QueryBetween queryBetween, PriceSource priceSource, String windowPeriod) {
+    return orderClient.windowedAverages(queryBetween, priceSource, windowPeriod);
+  }
 }
