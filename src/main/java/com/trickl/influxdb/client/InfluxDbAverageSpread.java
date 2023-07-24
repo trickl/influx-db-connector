@@ -110,6 +110,12 @@ public class InfluxDbAverageSpread {
             BadRequestException.class,
             e -> {
               log.log(Level.WARNING, "Error executing query: " + flux);
-            });
+            })
+        .defaultIfEmpty(
+            PriceSourceDouble.builder()
+                .exchangeId(priceSource.getExchangeId())
+                .instrumentId(priceSource.getInstrumentId())
+                .value(null)
+                .build());
   }
 }

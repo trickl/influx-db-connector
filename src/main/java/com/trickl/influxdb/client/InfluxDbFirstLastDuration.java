@@ -91,6 +91,14 @@ public class InfluxDbFirstLastDuration {
             BadRequestException.class,
             e -> {
               log.log(Level.WARNING, "Error executing query: " + flux);
-            });
+            })
+        .defaultIfEmpty(
+            PriceSourceFieldFirstLastDuration.builder()
+                .exchangeId(priceSource.getExchangeId())
+                .instrumentId(priceSource.getInstrumentId())
+                .first("")
+                .last("")
+                .duration("0m")
+                .build());
   }
 }
