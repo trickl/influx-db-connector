@@ -7,6 +7,7 @@ import com.trickl.influxdb.text.Rfc3339;
 import com.trickl.model.pricing.primitives.PriceSource;
 import com.trickl.model.pricing.statistics.PriceSourceFieldFirstLastDuration;
 import java.text.MessageFormat;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
@@ -99,6 +100,7 @@ public class InfluxDbFirstLastDuration {
                 .first("")
                 .last("")
                 .duration("0m")
+                .time(Instant.now())
                 .build());
   }
 }
