@@ -115,7 +115,7 @@ public class InfluxDbAverageSpread {
             PriceSourceDouble.builder()
                 .exchangeId(priceSource.getExchangeId())
                 .instrumentId(priceSource.getInstrumentId())
-                .value(null)
+                .value(Double.NaN)
                 .build());
   }
 }

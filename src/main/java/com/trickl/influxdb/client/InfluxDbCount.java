@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Log
@@ -38,7 +37,7 @@ public class InfluxDbCount {
       String measurementName,
       String fieldName,
       PriceSource priceSource) {
-    return count(queryBetween, measurementName, fieldName, priceSource);
+    return count(queryBetween, measurementName, fieldName, priceSource, Optional.empty());
   }
 
   /**
@@ -87,11 +86,18 @@ public class InfluxDbCount {
                 ZonedDateTime.ofInstant(queryBetween.getEnd(), ZoneOffset.UTC)));
 
     QueryReactiveApi queryApi = influxDbClient.getQueryReactiveApi();
+
     return Mono.from(queryApi.query(flux, PriceSourceInteger.class))
         .doOnError(
             BadRequestException.class,
             e -> {
               log.log(Level.WARNING, "Error executing query: " + flux);
-            });
+            })
+        .defaultIfEmpty(
+            PriceSourceInteger.builder()
+                .exchangeId(priceSource.getExchangeId())
+                .instrumentId(priceSource.getInstrumentId())
+                .value(0)
+                .build());
   }
 }
