@@ -58,7 +58,7 @@ public class InfluxDbFindBetween {
       Class<T> measurementClazz,
       Map<String, Set<String>> filter) {
     return findBetween(
-        priceSource, queryBetween, measurementName, measurementClazz, filter);
+        priceSource, queryBetween, measurementName, measurementClazz, filter, Optional.empty());
   }
 
   /**
