@@ -4,6 +4,8 @@ import com.trickl.influxdb.exceptions.MeasurementNotSupportedException;
 import com.trickl.model.event.InstrumentEvent;
 import com.trickl.model.event.InstrumentEventType;
 import com.trickl.model.event.MarketStateChange;
+import com.trickl.model.event.TradeUpdate;
+import com.trickl.model.event.VolumeUpdate;
 import com.trickl.model.event.sports.SportsEventIncident;
 import com.trickl.model.event.sports.SportsEventMatchTimeUpdate;
 import com.trickl.model.event.sports.SportsEventOutcomeUpdate;
@@ -26,6 +28,8 @@ public class InstrumentEventClient {
   private final SportsEventScoreUpdateClient sportsEventScoreUpdateClient;
   private final SportsEventPeriodUpdateClient sportsEventPeriodUpdateClient;
   private final SportsEventMatchTimeUpdateClient sportsEventMatchTimeUpdateClient;
+  private final TradeUpdateClient tradeUpdateClient;
+  private final VolumeUpdateClient volumeUpdateClient;
 
   /**
    * Stores events in the database.
@@ -77,13 +81,29 @@ public class InstrumentEventClient {
             .collectList()
             .map(list -> sportsEventMatchTimeUpdateClient.store(priceSource, list));
 
+    Mono<Flux<Integer>> storeTradeUpdates =
+        Flux.fromIterable(events)
+            .filter(event -> event instanceof TradeUpdate)
+            .cast(TradeUpdate.class)
+            .collectList()
+            .map(list -> tradeUpdateClient.store(priceSource, list));
+
+    Mono<Flux<Integer>> storeVolumeUpdates =
+        Flux.fromIterable(events)
+            .filter(event -> event instanceof VolumeUpdate)
+            .cast(VolumeUpdate.class)
+            .collectList()
+            .map(list -> volumeUpdateClient.store(priceSource, list));
+
     return Flux.merge(
             storeMarketsChangeEvents,
             storeSportsEventIncidents,
             storeSportsEventOutcomeUpdates,
             storeSportsEventScoreUpdates,
             storeSportsEventPeriodUpdates,
-            storeSportsEventMatchTimeUpdates)
+            storeSportsEventMatchTimeUpdates,
+            storeTradeUpdates,
+            storeVolumeUpdates)
         .flatMap(rows -> rows);
   }
 
@@ -102,7 +122,9 @@ public class InstrumentEventClient {
               sportsEventOutcomeUpdateClient.findBetween(eventSource, queryBetween),
               sportsEventScoreUpdateClient.findBetween(eventSource, queryBetween),
               sportsEventPeriodUpdateClient.findBetween(eventSource, queryBetween),
-              sportsEventMatchTimeUpdateClient.findBetween(eventSource, queryBetween))
+              sportsEventMatchTimeUpdateClient.findBetween(eventSource, queryBetween),
+              tradeUpdateClient.findBetween(eventSource, queryBetween),
+              volumeUpdateClient.findBetween(eventSource, queryBetween))
           .sort(InstrumentEventClient::compareEventTimes);
     }
 
@@ -139,6 +161,14 @@ public class InstrumentEventClient {
               .cast(InstrumentEvent.class);
         case SPORTS_EVENT_MATCH_TIME_UPDATE:
           return sportsEventMatchTimeUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case TRADE_UPDATE:
+          return tradeUpdateClient
+              .findBetween(eventSource, queryBetween)
+              .cast(InstrumentEvent.class);
+        case VOLUME_UPDATE:
+          return volumeUpdateClient
               .findBetween(eventSource, queryBetween)
               .cast(InstrumentEvent.class);
         default:
@@ -185,6 +215,10 @@ public class InstrumentEventClient {
         case MARKET_STATE_CHANGE:
           return Flux.error(
               new MeasurementNotSupportedException("Aggregate market events not supported."));
+        case TRADE_UPDATE:
+        case VOLUME_UPDATE:
+          return Flux.error(
+              new MeasurementNotSupportedException("Aggregate trade events not supported."));
         default:
           return Flux.error(
               new MeasurementNotSupportedException(
@@ -220,6 +254,10 @@ public class InstrumentEventClient {
       case "outcome":
         return Flux.empty();
       case "period":
+        return Flux.empty();
+      case "trade":
+        return Flux.empty();
+      case "volume":
         return Flux.empty();
       case "score":
         return sportsEventScoreUpdateClient

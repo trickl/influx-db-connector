@@ -15,7 +15,9 @@ import com.trickl.influxdb.client.SportsEventMatchTimeUpdateClient;
 import com.trickl.influxdb.client.SportsEventOutcomeUpdateClient;
 import com.trickl.influxdb.client.SportsEventPeriodUpdateClient;
 import com.trickl.influxdb.client.SportsEventScoreUpdateClient;
+import com.trickl.influxdb.client.TradeUpdateClient;
 import com.trickl.influxdb.client.TransactionClient;
+import com.trickl.influxdb.client.VolumeUpdateClient;
 import java.time.Duration;
 import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
@@ -88,6 +90,16 @@ public class InfluxDbConfiguration {
   }
 
   @Bean
+  TradeUpdateClient influxDbTradeUpdateClient() {
+    return new TradeUpdateClient(influxDbClient(), bucket);
+  }
+
+  @Bean
+  VolumeUpdateClient influxDbVolumeUpdateClient() {
+    return new VolumeUpdateClient(influxDbClient(), bucket);
+  }
+
+  @Bean
   AnalyticPrimitiveValueClient influxDbAnalyticPrimitiveValueClient() {
     return new AnalyticPrimitiveValueClient(influxDbClient(), bucket);
   }
@@ -110,7 +122,9 @@ public class InfluxDbConfiguration {
         influxDbSportsEventOutcomeUpdateClient(),
         influxDbSportsEventScoreUpdateClient(),
         influxDbSportsEventPeriodUpdateClient(),
-        influxDbSportsEventMatchTimeUpdateClient());
+        influxDbSportsEventMatchTimeUpdateClient(),
+        influxDbTradeUpdateClient(),
+        influxDbVolumeUpdateClient());
   }
 
   @Bean
