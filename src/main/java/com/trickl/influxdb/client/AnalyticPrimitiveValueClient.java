@@ -233,40 +233,74 @@ public class AnalyticPrimitiveValueClient {
   }
 
   /**
-   * Find a summary of changes between a period of time, grouped by instrument.
+   * Find a summary of changes to an analytic between a period of time.
    *
    * @param queryBetween A time window there series must have a data point within
-   * @param priceSource The price source
-   * @return A list of series, including the first and last value of a field
+   * @param temporalPriceSource The analytic source
+   * @param measurementName The measurement the analytic values are stored in
+   * @param analyticId The analytic identifier
+   * @return The first and last value of the analytic, and the duration between them
    */
-  public Flux<PriceSourceFieldFirstLastDuration> firstLastDuration(
-      QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
+      QueryBetween queryBetween,
+      TemporalPriceSource temporalPriceSource,
+      String measurementName,
+      AnalyticId analyticId) {
     InfluxDbFirstLastDuration influxDbAdapter =
         new InfluxDbFirstLastDuration(influxDbClient, bucket);
-    return Flux.concat(
-        Stream.of(
-                "analytic_double_value",
-                "analytic_integer_value",
-                "analytic_string_value",
-                "analytic_boolean_value")
-            .map(
-                measurementName ->
-                    influxDbAdapter.firstLastDuration(
-                        queryBetween, "measurementName", "time", priceSource))
-            .collect(Collectors.toList()));
+    return influxDbAdapter.firstLastDuration(
+        queryBetween,
+        measurementName,
+        "value",
+        toStoredPriceSource(temporalPriceSource.getPriceSource()),
+        Optional.of(buildAnalyticFilter(analyticId, temporalPriceSource)));
   }
 
   /**
-   * Find a count of analytic values between a period of time, grouped by instrument.
+   * Find a count of analytic values between a period of time.
    *
    * @param queryBetween A time window there series must have a data point within
-   * @param priceSource The price source
-   * @return Counts by instruments
+   * @param temporalPriceSource The analytic source
+   * @param measurementName The measurement the analytic values are stored in
+   * @param analyticId The analytic identifier
+   * @return The number of analytic values
    */
-  public Mono<Integer> count(QueryBetween queryBetween, PriceSource priceSource) {
+  public Mono<Integer> count(
+      QueryBetween queryBetween,
+      TemporalPriceSource temporalPriceSource,
+      String measurementName,
+      AnalyticId analyticId) {
     InfluxDbCount influxDbClient = new InfluxDbCount(this.influxDbClient, bucket);
     return influxDbClient
-        .count(queryBetween, "measurementName", "time", priceSource)
+        .count(
+            queryBetween,
+            measurementName,
+            "value",
+            toStoredPriceSource(temporalPriceSource.getPriceSource()),
+            Optional.of(buildAnalyticFilter(analyticId, temporalPriceSource)))
         .map(PriceSourceInteger::getValue);
+  }
+
+  private static PriceSource toStoredPriceSource(PriceSource priceSource) {
+    // Analytic values are stored with upper case identifiers, see InfluxDbFindBetween
+    return PriceSource.builder()
+        .exchangeId(priceSource.getExchangeId().toUpperCase())
+        .instrumentId(priceSource.getInstrumentId().toUpperCase())
+        .build();
+  }
+
+  private static String buildAnalyticFilter(
+      AnalyticId analyticId, TemporalPriceSource temporalPriceSource) {
+    StringBuilder filter =
+        new StringBuilder()
+            .append(String.format("r.domain == \"%s\"", analyticId.getDomain()))
+            .append(String.format(" and r.analyticName == \"%s\"", analyticId.getName()))
+            .append(
+                String.format(
+                    " and r.temporalSource == \"%s\"", temporalPriceSource.getTemporalSource()));
+    if (analyticId.getParameters() != null && analyticId.getParameters().length() > 0) {
+      filter.append(String.format(" and r.parameters == \"%s\"", analyticId.getParameters()));
+    }
+    return filter.toString();
   }
 }

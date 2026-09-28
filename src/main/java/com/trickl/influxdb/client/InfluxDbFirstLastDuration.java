@@ -10,6 +10,7 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.logging.Level;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
@@ -37,12 +38,33 @@ public class InfluxDbFirstLastDuration {
       String measurementName,
       String fieldName,
       PriceSource priceSource) {
+    return firstLastDuration(
+        queryBetween, measurementName, fieldName, priceSource, Optional.empty());
+  }
 
+  /**
+   * Find all available series that overlap a time window.
+   *
+   * @param queryBetween A time window there series must have a data point within
+   * @param measurementName the name of the measurement
+   * @param fieldName the name of the field to query
+   * @param priceSource filter on this price source
+   * @param additionalFilter additional flux filter conditions
+   * @return A list of series
+   */
+  public Mono<PriceSourceFieldFirstLastDuration> firstLastDuration(
+      QueryBetween queryBetween,
+      String measurementName,
+      String fieldName,
+      PriceSource priceSource,
+      Optional<String> additionalFilter) {
+
+    String filterExtension = additionalFilter.map(s -> " and " + s).orElse("");
     String filter =
         MessageFormat.format(
             "|> filter(fn: (r) => r._measurement == measurement and r._field == field"
-                + " and r.exchangeId == \"{0}\" and r.instrumentId == \"{1}\")\n",
-            priceSource.getExchangeId(), priceSource.getInstrumentId());
+                + " and r.exchangeId == \"{0}\" and r.instrumentId == \"{1}\"{2})\n",
+            priceSource.getExchangeId(), priceSource.getInstrumentId(), filterExtension);
 
     String flux =
         MessageFormat.format(
@@ -68,6 +90,7 @@ public class InfluxDbFirstLastDuration {
                 + "      _time: r._time_l,\n"
                 + "      duration: string(v: duration(v: uint(v: r._time_l) - uint(v:"
                 + " r._time_f))),\n"
+                + "      durationMs: (int(v: r._time_l) - int(v: r._time_f)) / 1000000,\n"
                 + "      first: r._value_f,\n"
                 + "      last: r._value_l,\n"
                 + "      exchangeId: r.exchangeId,\n"
@@ -100,6 +123,7 @@ public class InfluxDbFirstLastDuration {
                 .first("")
                 .last("")
                 .duration("0m")
+                .durationMs(0)
                 .time(Instant.now())
                 .build());
   }
